@@ -1,0 +1,2 @@
+# DocFlow Studio Desktop
+DocFlow Studio Desktop Markdown authoring & publication-grade export — native on Windows and Linux. DocFlow Studio Desktop adalah aplikasi desktop untuk menulis dokumen Markdown dengan preview langsung, mengatur tata letak halaman, dan mengekspor ke DOCX, PDF, DOC, HTML, atau Markdown. Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim ke jaringan.
