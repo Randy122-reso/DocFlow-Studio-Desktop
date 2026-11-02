@@ -23,7 +23,13 @@ export const settingsSchema = z.object({
   justifyText: z.boolean(),
   windowBounds: windowBoundsSchema,
   lastOpenedDir: z.string().nullable(),
-  lastExportDir: z.string().nullable()
+  lastExportDir: z.string().nullable(),
+  uiState: z.object({
+    zoomLevel: z.number().int().min(50).max(200),
+    isPagedMode: z.boolean(),
+    autoScroll: z.boolean(),
+    syncScrollWithToc: z.boolean()
+  })
 })
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -40,7 +46,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   justifyText: false,
   windowBounds: { width: 1400, height: 900, x: null, y: null },
   lastOpenedDir: null,
-  lastExportDir: null
+  lastExportDir: null,
+  uiState: {
+    zoomLevel: 100,
+    isPagedMode: true,
+    autoScroll: false,
+    syncScrollWithToc: true
+  }
 }
 
 export class SettingsService {
@@ -55,7 +67,11 @@ export class SettingsService {
 
   async init(): Promise<void> {
     const stored = await readJsonFile<Record<string, unknown>>(this.filePath, {})
-    const migrated = this.migrate(stored)
+    const patched = { ...stored }
+    if (!patched.uiState || typeof patched.uiState !== 'object') {
+      patched.uiState = DEFAULT_SETTINGS.uiState
+    }
+    const migrated = this.migrate(patched)
     const parsed = settingsSchema.safeParse(migrated)
     this.values = parsed.success ? parsed.data : { ...DEFAULT_SETTINGS }
     this.ready = true
@@ -131,6 +147,10 @@ export class SettingsService {
       windowBounds: {
         ...DEFAULT_SETTINGS.windowBounds,
         ...((migrated.windowBounds as Record<string, unknown>) ?? {})
+      },
+      uiState: {
+        ...DEFAULT_SETTINGS.uiState,
+        ...((migrated.uiState as Record<string, unknown>) ?? {})
       }
     } as AppSettings
   }

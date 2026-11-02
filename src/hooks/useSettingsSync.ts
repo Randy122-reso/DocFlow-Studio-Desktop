@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { AppSettings } from '../../electron/types/ipc'
 import { useFileStore } from '../store/fileStore'
+import { useUIStore } from '../store/uiStore'
 import type { DocumentSettings } from '../types/document'
 
 const DOCUMENT_KEYS: Array<keyof DocumentSettings> = [
@@ -35,6 +36,7 @@ export function useSettingsSync(): void {
       .then((settings) => {
         if (!mounted) return
         useFileStore.getState().setSettings(pickDocumentSettings(settings))
+        if (settings.uiState) useUIStore.getState().loadFromSettings(settings)
         hydrated.current = true
       })
       .catch(() => {
@@ -54,6 +56,26 @@ export function useSettingsSync(): void {
         timer = null
         const current = useFileStore.getState().settings
         void window.docflow.settings.set(current).catch(() => undefined)
+      }, 500)
+    })
+    return () => {
+      unsubscribe()
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const unsubscribe = useUIStore.subscribe((state, previous) => {
+      if (state.syncScrollWithToc === previous.syncScrollWithToc &&
+          state.zoomLevel === previous.zoomLevel &&
+          state.isPagedMode === previous.isPagedMode &&
+          state.autoScroll === previous.autoScroll) return
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        timer = null
+        const ui = useUIStore.getState()
+        void window.docflow.settings.set({ uiState: { ...ui } }).catch(() => undefined)
       }, 500)
     })
     return () => {

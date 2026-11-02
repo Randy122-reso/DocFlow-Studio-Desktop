@@ -1,4 +1,5 @@
-import { AlignLeft, Clock3, Hash, Type } from 'lucide-react'
+import { AlignLeft, Clock3, Hash, Type, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useUIStore } from '../store/uiStore'
 import type { DocumentStats, HeadingItem } from '../types/document'
 import { THEME_LABELS } from '../styles/themes'
 import type { ThemeName } from '../../electron/types/ipc'
@@ -16,6 +17,17 @@ export function TableOfContents({ headings, stats, theme, onSelect }: TableOfCon
       <div className="toc-head">
         <span>Outline</span>
         <span className="toc-count">{headings.length}</span>
+        <button
+          type="button"
+          className={`toc-sync-btn ${useUIStore((s) => s.syncScrollWithToc) ? 'active' : ''}`}
+          title="Sync scroll with outline"
+          onClick={() => useUIStore.getState().toggleSyncToc()}
+          aria-label="Toggle TOC sync scroll"
+          aria-pressed={useUIStore((s) => s.syncScrollWithToc)}
+        >
+          {useUIStore((s) => s.syncScrollWithToc) ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+          <span className="toc-sync-label">Sync</span>
+        </button>
       </div>
       {headings.length === 0 ? (
         <div className="toc-empty">

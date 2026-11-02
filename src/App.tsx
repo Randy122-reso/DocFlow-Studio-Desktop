@@ -11,6 +11,8 @@ import { useRecentFiles } from './hooks/useRecentFiles'
 import { useSettingsSync } from './hooks/useSettingsSync'
 import { useWindowTitle } from './hooks/useWindowTitle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useScrollSync } from './hooks/useScrollSync'
+import { useUIStore } from './store/uiStore'
 import { TopNav } from './components/TopNav'
 import { FormattingToolbar } from './components/FormattingToolbar'
 import { DocumentEditor } from './components/DocumentEditor'
@@ -78,6 +80,8 @@ export default function App() {
 
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
+
+  const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
 
   const deferredContent = useDeferredValue(content)
   const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
@@ -225,10 +229,22 @@ export default function App() {
     [setContent]
   )
 
+  useEffect(() => {
+    const el = editorRef.current
+    if (!el) return
+    const onScroll = () => handleEditorScroll()
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [handleEditorScroll])
+
   const focusHeading = useCallback((id: string) => {
-    const target = previewRef.current?.querySelector<HTMLElement>(`[id="${id.replace(/"/g, '\\"')}"]`)
-    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
+    const item = parsed.headings.find((h) => h.id === id)
+    if (item) handleTocClick(item)
+    else {
+      const target = previewRef.current?.querySelector<HTMLElement>(`[id="${id.replace(/"/g, '\\"')}"]`)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [parsed.headings, handleTocClick, previewRef])
 
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -359,6 +375,8 @@ export default function App() {
                 html={parsed.html}
                 title={title}
                 settings={settings}
+                zoomLevel={useUIStore((s) => s.zoomLevel)}
+                isPagedMode={useUIStore((s) => s.isPagedMode)}
               />
             )}
           </div>

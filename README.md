@@ -6,7 +6,7 @@ DocFlow Studio Desktop adalah aplikasi desktop untuk menulis dokumen Markdown de
 langsung, mengatur tata letak halaman, dan mengekspor ke DOCX, PDF, DOC, HTML, atau Markdown.
 Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim ke jaringan.
 
-![Status](https://img.shields.io/badge/status-0.1.0%20initial-b45309)
+![Status](https://img.shields.io/badge/status-1.0.0%20beta-10b981)
 ![Electron](https://img.shields.io/badge/Electron-33-2b2b2b)
 ![React](https://img.shields.io/badge/React-19-087ea4)
 ![License](https://img.shields.io/badge/license-MIT-2f855a)
@@ -23,9 +23,17 @@ Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim k
 - Table of contents otomatis dengan ID heading unik dan navigasi klik.
 - Statistik dokumen: kata, karakter, kalimat, paragraf, heading, code block, link, gambar,
   dan estimasi waktu baca.
-- Formatting toolbar: bold, italic, strikethrough, inline code, code block, heading, quote,
-  bullet/numbered/task list, link, gambar, tabel, dan horizontal rule.
+- Formatting toolbar lengkap: theme, font size, page size, margin, paged/continuous toggle, zoom controls, auto-scroll toggle, TOC sync toggle, dan copy Markdown.
 - Zen Review untuk membaca dokumen tanpa distraksi.
+
+### Sinkronisasi UI & TOC
+
+- **TOC Synchronization**: klik outline (TOC) untuk men-scroll editor dan preview secara bersamaan; dapat di-toggle ON/OFF.
+- **Auto-scroll**: saat mengetik di ujung editor, preview akan mengikuti scroll secara proporsional (toggle ON/OFF).
+- **Zoom preview**: 50%–200% dengan CSS transform; state tersimpan di `settings.json`.
+- **Paged / Continuous**: toggle tampilan halaman kartu atau aliran kontinyu.
+- **Copy Markdown**: salin seluruh isi editor ke clipboard dengan satu klik.
+- **UI State Persistence**: zoom, paged mode, auto-scroll, dan TOC sync tersimpan otomatis dan dipulihkan saat aplikasi dibuka ulang.
 
 ### Tampilan dokumen
 

@@ -9,10 +9,12 @@ interface DocumentViewerProps {
   title: string
   settings: DocumentSettings
   zen?: boolean
+  zoomLevel?: number
+  isPagedMode?: boolean
 }
 
 export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(function DocumentViewer(
-  { html, title, settings, zen = false },
+  { html, title, settings, zen = false, zoomLevel = 100, isPagedMode = true },
   ref
 ) {
   const handleClick = async (event: MouseEvent<HTMLDivElement>) => {
@@ -60,7 +62,8 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(fu
       <div className="preview-stage">
         <article
           ref={ref}
-          className={`document-page theme-${settings.theme} paper-${settings.paperTone} font-${settings.fontFamily} size-${settings.fontSize} margin-${settings.marginSize} ${settings.justifyText ? 'justify-text' : ''} ${settings.autoNumberHeadings ? 'numbered-headings' : ''}`}
+          style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
+          className={`document-page theme-${settings.theme} paper-${settings.paperTone} font-${settings.fontFamily} size-${settings.fontSize} margin-${settings.marginSize} ${settings.justifyText ? 'justify-text' : ''} ${settings.autoNumberHeadings ? 'numbered-headings' : ''} ${isPagedMode ? 'paged-mode' : 'continuous-mode'}`}
         >
           {settings.showHeaderFooter && (
             <header className="doc-header">

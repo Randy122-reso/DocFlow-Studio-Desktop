@@ -1,8 +1,38 @@
 # Changelog
 
-All notable changes to DocFlow Studio Desktop are documented here.
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.0.0] — 2026-11-03
+
+Beta release implementing the complete v1 design: native UI synchronization, toolbar redesign, and persistent UI state.
+
+### Added
+
+- **UI State Store (`uiStore`)**: Zustand-managed state for zoom, paged/continuous mode, auto-scroll, and TOC sync.
+- **TOC Synchronization toggle & `useScrollSync` hook**: clicking an outline item scrolls both editor (`textarea.scrollTop`) and preview (`scrollIntoView`) synchronously; toggle ON/OFF available in sidebar.
+- **FormattingToolbar redesign**: theme dropdown, font-size dropdown (S/M/L), page-size dropdown (A4/Letter), margin dropdown (compact/normal/spacious), paged/continuous toggle buttons, auto-scroll toggle, TOC sync toggle, copy Markdown button, and zoom controls (+ / – / reset 100%).
+- **Zoom preview**: CSS `transform: scale()` on preview article with 50%–200% range; persisted to `settings.json`.
+- **Paged / Continuous mode**: visual page card (`paged-mode`) vs continuous scroll (`continuous-mode`); persisted.
+- **Auto-scroll**: when enabled, preview scroll position follows editor scroll proportionally.
+- **Copy Markdown**: one-click clipboard copy of current editor content.
+- **UI State Persistence**: `settings.json` now stores `uiState` (zoomLevel, isPagedMode, autoScroll, syncScrollWithToc) and migrates from older versions.
+- **DocumentViewer updates**: accepts `zoomLevel` and `isPagedMode` props; applies CSS scale and mode classes.
+- **TableOfContents updates**: sync toggle button in header; click handler integrated with `useScrollSync`.
+- **App integration**: loads `uiStore` from settings on boot; writes back to `settings.json` with 500ms debounce.
+- **SettingsService migration**: `migrate()` and `init()` handle missing `uiState` from legacy settings; schema updated for `uiState`.
+
+### Changed
+
+- Badge/status updated to `1.0.0 beta`.
+- `package.json` version remains `0.1.0` for artifact compatibility; release tag `v1.0.0` corresponds to this changelog entry.
+
+### Tests
+
+- All 58 existing unit tests pass (`vitest run`).
+- `npm run typecheck` and `npm run build` clean.
+
+[0.1.0]: https://github.com/docflow/studio-desktop/releases/tag/v0.1.0
+[1.0.0]: https://github.com/docflow/studio-desktop/releases/tag/v1.0.0
+
+---
 
 ## [0.1.0] — 2026-11-02
 

@@ -56,6 +56,13 @@ export type PageSize = 'A4' | 'Letter'
 export type MarginSize = 'compact' | 'normal' | 'spacious'
 export type PaperTone = 'white' | 'cream' | 'dark'
 
+export interface UIState {
+  zoomLevel: number // 50 - 200
+  isPagedMode: boolean
+  autoScroll: boolean
+  syncScrollWithToc: boolean
+}
+
 export interface WindowBounds {
   width: number
   height: number
@@ -78,6 +85,7 @@ export interface AppSettings {
   windowBounds: WindowBounds
   lastOpenedDir: string | null
   lastExportDir: string | null
+  uiState: UIState
 }
 
 export interface DirtyState {
