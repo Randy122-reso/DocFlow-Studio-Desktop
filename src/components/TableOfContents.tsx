@@ -12,6 +12,7 @@ interface TableOfContentsProps {
 }
 
 export function TableOfContents({ headings, stats, theme, onSelect }: TableOfContentsProps) {
+  const ui = useUIStore()
   return (
     <aside className="toc-sidebar">
       <div className="toc-head">
@@ -19,13 +20,13 @@ export function TableOfContents({ headings, stats, theme, onSelect }: TableOfCon
         <span className="toc-count">{headings.length}</span>
         <button
           type="button"
-          className={`toc-sync-btn ${useUIStore((s) => s.syncScrollWithToc) ? 'active' : ''}`}
+          className={`toc-sync-btn ${ui.syncScrollWithToc ? 'active' : ''}`}
           title="Sync scroll with outline"
           onClick={() => useUIStore.getState().toggleSyncToc()}
           aria-label="Toggle TOC sync scroll"
-          aria-pressed={useUIStore((s) => s.syncScrollWithToc)}
+          aria-pressed={ui.syncScrollWithToc}
         >
-          {useUIStore((s) => s.syncScrollWithToc) ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+          {ui.syncScrollWithToc ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
           <span className="toc-sync-label">Sync</span>
         </button>
       </div>

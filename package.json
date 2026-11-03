@@ -1,6 +1,6 @@
 {
   "name": "@docflow/studio-desktop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "DocFlow Studio Desktop — Markdown authoring & publication-grade export, native on Windows & Linux.",
   "private": true,
   "license": "MIT",

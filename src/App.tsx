@@ -83,6 +83,7 @@ export default function App() {
 
   const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
 
+  const uiState = useUIStore()
   const deferredContent = useDeferredValue(content)
   const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
   const stats = useMemo(() => computeDocumentStats(content), [content])
@@ -375,8 +376,8 @@ export default function App() {
                 html={parsed.html}
                 title={title}
                 settings={settings}
-                zoomLevel={useUIStore((s) => s.zoomLevel)}
-                isPagedMode={useUIStore((s) => s.isPagedMode)}
+                zoomLevel={uiState.zoomLevel}
+                isPagedMode={uiState.isPagedMode}
               />
             )}
           </div>
