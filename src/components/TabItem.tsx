@@ -40,14 +40,14 @@ export function TabItem({ tab, isActive, onActivate, onClose, onContextMenu }: T
       }}
       onContextMenu={(event) => onContextMenu(event, tab)}
     >
-      {tab.isPinned && <Pin size={11} className="tab-pin" aria-label={t('tabs.pin')} />}
+      {tab.isPinned && <Pin size={11} className="tab-pin" aria-label={t('tabs:pin')} />}
       <span className="tab-title">{tab.displayName}</span>
-      {dirty && <span className="tab-dirty" title={t('tabs.dirty')} />}
+      {dirty && <span className="tab-dirty" title={t('tabs:dirty')} />}
       <button
         type="button"
         className="tab-close"
-        aria-label={t('tabs.close')}
-        title={t('tabs.close')}
+        aria-label={t('tabs:close')}
+        title={t('tabs:close')}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation()

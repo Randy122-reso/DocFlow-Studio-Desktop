@@ -46,5 +46,18 @@
   "writeChanges": "Write changes",
   "dryRunDone": "Preview ready — no files were modified",
   "writeDone": "{{count}} files updated",
-  "searching": "Searching…"
+  "searching": "Searching…",
+  "markAll": "Mark All",
+  "clearMarks": "Clear all marks",
+  "copyMarked": "Copy Marked Text",
+  "bookmarkLine": "Bookmark line",
+  "bookmarks": "Bookmarks",
+  "noBookmarks": "No bookmarks in this document",
+  "markedResult": "Marked {{matches}} matches on {{lines}} lines",
+  "copiedMarked": "Copied {{count}} marked lines to clipboard",
+  "noMarkedLines": "No marked lines to copy",
+  "toggleBookmark": "Toggle Bookmark (Ctrl+F2)",
+  "nextBookmark": "Next Bookmark (F2)",
+  "prevBookmark": "Previous Bookmark (Shift+F2)",
+  "clearAllBookmarks": "Clear All Bookmarks (Ctrl+Shift+F2)"
 }

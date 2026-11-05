@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Locale } from '../../electron/types/ipc'
+import { normalizeI18nKey } from '../locales'
 
 export interface I18nHook {
   t: (key: string, options?: Record<string, unknown>) => string
@@ -10,8 +11,15 @@ export interface I18nHook {
 }
 
 export function useI18n(): I18nHook {
-  const { t, i18n } = useTranslation()
+  const { t: translate, i18n } = useTranslation()
   const [preference, setPreference] = useState<Locale>('auto')
+
+  const t = useCallback(
+    (key: string, options?: Record<string, unknown>): string => {
+      return translate(normalizeI18nKey(key), options)
+    },
+    [translate]
+  )
 
   useEffect(() => {
     let active = true

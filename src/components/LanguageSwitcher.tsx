@@ -6,17 +6,17 @@ export function LanguageSwitcher() {
   const { preference, setLocale, t } = useI18n()
 
   return (
-    <label className="language-switcher" title={t('common.language')}>
+    <label className="language-switcher" title={t('language')}>
       <Languages size={15} />
-      <span className="sr-only">{t('common.language')}</span>
+      <span className="sr-only">{t('language')}</span>
       <select
-        aria-label={t('common.language')}
+        aria-label={t('language')}
         value={preference}
         onChange={(event) => void setLocale(event.target.value as Locale)}
       >
-        <option value="auto">{t('common.auto')}</option>
-        <option value="en">{t('common.english')}</option>
-        <option value="id">{t('common.indonesian')}</option>
+        <option value="auto">{t('auto')}</option>
+        <option value="en">{t('english')}</option>
+        <option value="id">{t('indonesian')}</option>
       </select>
     </label>
   )

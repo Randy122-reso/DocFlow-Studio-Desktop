@@ -23,10 +23,10 @@ export function UpdateBanner() {
         {update.status === 'downloading' ? <Download size={15} /> : <Rocket size={15} />}
       </span>
       <div className="update-copy">
-        {update.status === 'available' && <strong>{t('update.available', { version })}</strong>}
-        {update.status === 'downloading' && <strong>{t('update.downloading', { progress: update.downloadProgress })}</strong>}
-        {update.status === 'ready' && <strong>{t('update.ready', { version })}</strong>}
-        {update.status === 'error' && <strong>{t('update.error')}</strong>}
+        {update.status === 'available' && <strong>{t('update:available', { version })}</strong>}
+        {update.status === 'downloading' && <strong>{t('update:downloading', { progress: update.downloadProgress })}</strong>}
+        {update.status === 'ready' && <strong>{t('update:ready', { version })}</strong>}
+        {update.status === 'error' && <strong>{t('update:error')}</strong>}
         {update.status === 'downloading' && (
           <span className="update-progress">
             <span style={{ width: `${update.downloadProgress}%` }} />
@@ -40,31 +40,31 @@ export function UpdateBanner() {
       <div className="update-actions">
         {update.status === 'available' && (
           <button type="button" className="primary-button small" onClick={() => void download()}>
-            <Download size={14} /> {t('update.download')}
+            <Download size={14} /> {t('update:download')}
           </button>
         )}
         {update.status === 'downloading' && (
           <button type="button" className="ghost-button small" onClick={() => void cancel()}>
-            {t('common.cancel')}
+            {t('cancel')}
           </button>
         )}
         {update.status === 'ready' && (
           <button type="button" className="primary-button small" onClick={() => void install()}>
-            <RefreshCw size={14} /> {t('update.restart')}
+            <RefreshCw size={14} /> {t('update:restart')}
           </button>
         )}
         {update.status === 'error' && (
           <button type="button" className="ghost-button small" onClick={() => void check()}>
-            {t('update.retry')}
+            {t('update:retry')}
           </button>
         )}
         <button type="button" className="ghost-button small" onClick={dismiss}>
-          {t('update.later')}
+          {t('update:later')}
         </button>
         <button type="button" className="ghost-button small" onClick={skip}>
-          {t('update.skip')}
+          {t('update:skip')}
         </button>
-        <button type="button" className="icon-button" onClick={dismiss} title={t('common.close')}>
+        <button type="button" className="icon-button" onClick={dismiss} title={t('close')}>
           <X size={14} />
         </button>
       </div>

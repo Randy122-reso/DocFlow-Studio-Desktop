@@ -36,7 +36,7 @@ export function TabBar({ onNewTab, onCloseTab, onDetachTab }: TabBarProps) {
   }
 
   return (
-    <div className="tabbar" role="tablist" aria-label={t('tabs.tabs')}>
+    <div className="tabbar" role="tablist" aria-label={t('tabs:tabs')}>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={tabs.map((tab) => tab.id)} strategy={horizontalListSortingStrategy}>
           <div className="tabbar-scroll">
@@ -59,7 +59,7 @@ export function TabBar({ onNewTab, onCloseTab, onDetachTab }: TabBarProps) {
           </div>
         </SortableContext>
       </DndContext>
-      <button type="button" className="tab-new" title={t('tabs.newTab')} aria-label={t('tabs.newTab')} onClick={onNewTab}>
+      <button type="button" className="tab-new" title={t('tabs:newTab')} aria-label={t('tabs:newTab')} onClick={onNewTab}>
         <Plus size={15} />
       </button>
     </div>

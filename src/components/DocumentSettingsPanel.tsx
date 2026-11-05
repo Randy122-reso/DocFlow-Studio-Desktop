@@ -86,19 +86,19 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
   }
 
   const updateSummary = (): string => {
-    if (update.status === 'checking') return t('update.checking')
+    if (update.status === 'checking') return t('update:checking')
     if (update.status === 'available' && update.availableVersion) {
-      return t('update.available', { version: update.availableVersion })
+      return t('update:available', { version: update.availableVersion })
     }
     if (update.status === 'downloading') {
-      return t('update.downloading', { progress: update.downloadProgress })
+      return t('update:downloading', { progress: update.downloadProgress })
     }
     if (update.status === 'ready' && update.availableVersion) {
-      return t('update.ready', { version: update.availableVersion })
+      return t('update:ready', { version: update.availableVersion })
     }
-    if (update.status === 'error') return t('update.error')
-    if (update.lastCheckedAt) return t('update.upToDate')
-    return t('update.notAvailable')
+    if (update.status === 'error') return t('update:error')
+    if (update.lastCheckedAt) return t('update:upToDate')
+    return t('update:notAvailable')
   }
 
   return (
@@ -107,21 +107,21 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
         className="modal settings-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={t('common.documentSettings')}
+        aria-label={t('documentSettings')}
       >
         <header className="modal-head">
           <div>
-            <h2>{t('common.documentSettings')}</h2>
-            <p>{t('common.settingsSubtitle')}</p>
+            <h2>{t('documentSettings')}</h2>
+            <p>{t('settingsSubtitle')}</p>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} title={t('common.close')}>
+          <button type="button" className="icon-button" onClick={onClose} title={t('close')}>
             <X size={18} />
           </button>
         </header>
 
         <div className="modal-body settings-body">
           <section className="settings-section">
-            <h3>{t('common.themeSection')}</h3>
+            <h3>{t('themeSection')}</h3>
             <div className="theme-grid">
               {DOCUMENT_THEMES.map((theme) => (
                 <button
@@ -141,10 +141,10 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
           </section>
 
           <section className="settings-section">
-            <h3>{t('common.typographySection')}</h3>
+            <h3>{t('typographySection')}</h3>
             <div className="settings-grid">
               <label className="field">
-                <span>{t('editor.fontSize')}</span>
+                <span>{t('editor:fontSize')}</span>
                 <select
                   value={settings.fontSize}
                   onChange={(event) => setSettings({ fontSize: event.target.value as FontSize })}
@@ -155,7 +155,7 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
                 </select>
               </label>
               <label className="field">
-                <span>{t('editor.fontFamily')}</span>
+                <span>{t('editor:fontFamily')}</span>
                 <select
                   value={settings.fontFamily}
                   onChange={(event) => setSettings({ fontFamily: event.target.value as FontFamily })}
@@ -169,10 +169,10 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
           </section>
 
           <section className="settings-section">
-            <h3>{t('common.pageSection')}</h3>
+            <h3>{t('pageSection')}</h3>
             <div className="settings-grid">
               <label className="field">
-                <span>{t('editor.pageSize')}</span>
+                <span>{t('editor:pageSize')}</span>
                 <select
                   value={settings.pageSize}
                   onChange={(event) => setSettings({ pageSize: event.target.value as PageSize })}
@@ -183,7 +183,7 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
                 </select>
               </label>
               <label className="field">
-                <span>{t('editor.margins')}</span>
+                <span>{t('editor:margins')}</span>
                 <select
                   value={settings.marginSize}
                   onChange={(event) => setSettings({ marginSize: event.target.value as MarginSize })}
@@ -194,7 +194,7 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
                 </select>
               </label>
               <label className="field">
-                <span>{t('editor.paperTone')}</span>
+                <span>{t('editor:paperTone')}</span>
                 <select
                   value={settings.paperTone}
                   onChange={(event) => setSettings({ paperTone: event.target.value as PaperTone })}
@@ -208,29 +208,29 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
           </section>
 
           <section className="settings-section">
-            <h3>{t('common.optionsSection')}</h3>
+            <h3>{t('optionsSection')}</h3>
             <div className="toggle-list">
               <Toggle
-                label={t('common.headerFooter')}
-                description={t('common.headerFooterDetail')}
+                label={t('headerFooter')}
+                description={t('headerFooterDetail')}
                 checked={settings.showHeaderFooter}
                 onChange={(value) => setSettings({ showHeaderFooter: value })}
               />
               <Toggle
-                label={t('common.pageNumbers')}
-                description={t('common.pageNumbersDetail')}
+                label={t('pageNumbers')}
+                description={t('pageNumbersDetail')}
                 checked={settings.showPageNumbers}
                 onChange={(value) => setSettings({ showPageNumbers: value })}
               />
               <Toggle
-                label={t('common.numberHeadings')}
-                description={t('common.numberHeadingsDetail')}
+                label={t('numberHeadings')}
+                description={t('numberHeadingsDetail')}
                 checked={settings.autoNumberHeadings}
                 onChange={(value) => setSettings({ autoNumberHeadings: value })}
               />
               <Toggle
-                label={t('common.justifyText')}
-                description={t('common.justifyTextDetail')}
+                label={t('justifyText')}
+                description={t('justifyTextDetail')}
                 checked={settings.justifyText}
                 onChange={(value) => setSettings({ justifyText: value })}
               />
@@ -240,43 +240,43 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
           {appSettings && (
             <>
               <section className="settings-section">
-                <h3>{t('common.applicationSection')}</h3>
-                <p className="settings-hint">{t('common.applicationDetail')}</p>
+                <h3>{t('applicationSection')}</h3>
+                <p className="settings-hint">{t('applicationDetail')}</p>
                 <div className="settings-grid">
                   <label className="field">
-                    <span>{t('common.language')}</span>
+                    <span>{t('language')}</span>
                     <select
                       value={preference}
                       onChange={(event) => void setLocale(event.target.value as Locale)}
                     >
-                      <option value="auto">{t('common.auto')}</option>
-                      <option value="en">{t('common.english')}</option>
-                      <option value="id">{t('common.indonesian')}</option>
+                      <option value="auto">{t('auto')}</option>
+                      <option value="en">{t('english')}</option>
+                      <option value="id">{t('indonesian')}</option>
                     </select>
-                    <small>{t('common.languageHint')}</small>
+                    <small>{t('languageHint')}</small>
                   </label>
                 </div>
               </section>
 
               <section className="settings-section">
-                <h3>{t('common.updatesSection')}</h3>
-                <p className="settings-hint">{t('common.updatesDetail')}</p>
+                <h3>{t('updatesSection')}</h3>
+                <p className="settings-hint">{t('updatesDetail')}</p>
                 <div className="settings-grid">
                   <label className="field">
-                    <span>{t('update.channel')}</span>
+                    <span>{t('update:channel')}</span>
                     <select
                       value={appSettings.updateChannel}
                       onChange={(event) => patchApp({ updateChannel: event.target.value as UpdateChannel })}
                     >
-                      <option value="stable">{t('update.stable')}</option>
-                      <option value="beta">{t('update.beta')}</option>
+                      <option value="stable">{t('update:stable')}</option>
+                      <option value="beta">{t('update:beta')}</option>
                     </select>
                   </label>
                 </div>
                 <div className="toggle-list">
                   <Toggle
-                    label={t('update.autoCheck')}
-                    description={t('common.updatesDetail')}
+                    label={t('update:autoCheck')}
+                    description={t('updatesDetail')}
                     checked={appSettings.autoCheckUpdates}
                     onChange={(value) => patchApp({ autoCheckUpdates: value })}
                   />
@@ -289,7 +289,7 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
                     disabled={checking || update.status === 'checking'}
                   >
                     <RefreshCw size={14} className={checking || update.status === 'checking' ? 'spin' : ''} />
-                    {t('common.checkUpdates')}
+                    {t('checkUpdates')}
                   </button>
                   <span className={`settings-status ${update.status}`} role="status">
                     {updateSummary()}
@@ -298,25 +298,25 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
               </section>
 
               <section className="settings-section">
-                <h3>{t('common.traySection')}</h3>
-                <p className="settings-hint">{t('common.trayDetail')}</p>
+                <h3>{t('traySection')}</h3>
+                <p className="settings-hint">{t('trayDetail')}</p>
                 <div className="toggle-list">
                   <Toggle
-                    label={t('tray.enabled')}
-                    description={t('common.trayDetail')}
+                    label={t('tray:enabled')}
+                    description={t('trayDetail')}
                     checked={appSettings.tray.enabled}
                     onChange={(value) => patchApp({ tray: { ...appSettings.tray, enabled: value } })}
                   />
                   <Toggle
-                    label={t('tray.minimizeOnClose')}
-                    description={t('common.trayDetail')}
+                    label={t('tray:minimizeOnClose')}
+                    description={t('trayDetail')}
                     checked={appSettings.tray.minimizeOnClose}
                     disabled={!appSettings.tray.enabled}
                     onChange={(value) => patchApp({ tray: { ...appSettings.tray, minimizeOnClose: value } })}
                   />
                   <Toggle
-                    label={t('tray.startMinimized')}
-                    description={t('common.trayDetail')}
+                    label={t('tray:startMinimized')}
+                    description={t('trayDetail')}
                     checked={appSettings.tray.startMinimized}
                     disabled={!appSettings.tray.enabled}
                     onChange={(value) => patchApp({ tray: { ...appSettings.tray, startMinimized: value } })}
@@ -344,10 +344,10 @@ export function DocumentSettingsPanel({ open, onClose }: DocumentSettingsPanelPr
               justifyText: false
             })}
           >
-            <RotateCcw size={14} /> {t('common.resetDefaults')}
+            <RotateCcw size={14} /> {t('resetDefaults')}
           </button>
           <button type="button" className="primary-button" onClick={onClose}>
-            <Check size={15} /> {t('common.done')}
+            <Check size={15} /> {t('done')}
           </button>
         </footer>
       </div>

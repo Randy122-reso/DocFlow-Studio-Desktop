@@ -30,6 +30,7 @@ interface SearchStore {
   history: string[]
   lastMatch: FindMatch | null
   selectionRange: { start: number; end: number } | null
+  focusToken: number
 
   allResults: FindResult[]
   allResultsOpen: boolean
@@ -94,6 +95,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
   history: [],
   lastMatch: null,
   selectionRange: null,
+  focusToken: 0,
 
   allResults: [],
   allResultsOpen: false,
@@ -115,10 +117,15 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     set((state) => ({
       isOpen: true,
       showReplace: showReplace || state.showReplace,
-      selectionRange: null
+      selectionRange: null,
+      focusToken: state.focusToken + 1
     })),
 
-  openFindInFiles: () => set({ inFilesOpen: true }),
+  openFindInFiles: () =>
+    set((state) => ({
+      inFilesOpen: true,
+      focusToken: state.focusToken + 1
+    })),
 
   closeFind: () => set({ isOpen: false, lastMatch: null, selectionRange: null }),
 

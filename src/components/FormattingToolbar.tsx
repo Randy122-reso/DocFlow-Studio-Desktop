@@ -73,10 +73,10 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       ref={toolbarRef}
     >
       {/* Format group */}
-      <div className="format-group" aria-label={t('editor.formatting')}>
+      <div className="format-group" aria-label={t('editor:formatting')}>
         {FORMAT_BUTTONS.map((button) => {
           const Icon = button.icon
-          const label = t(`editor.${button.action}`)
+          const label = t(`editor:${button.action}`)
           return (
             <button
               key={button.action}
@@ -96,9 +96,9 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* Theme / Font / Page / Margin */}
-      <div className="format-group" aria-label={t('editor.documentStyle')}>
+      <div className="format-group" aria-label={t('editor:documentStyle')}>
         <select
-          aria-label={t('editor.theme')}
+          aria-label={t('editor:theme')}
           className="toolbar-select"
           value={settings.theme}
           onChange={(e) => useFileStore.getState().setSettings({ theme: e.target.value as typeof settings.theme })}
@@ -111,7 +111,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         </select>
 
         <select
-          aria-label={t('editor.fontSize')}
+          aria-label={t('editor:fontSize')}
           className="toolbar-select"
           value={settings.fontSize}
           onChange={(e) => useFileStore.getState().setSettings({ fontSize: e.target.value as typeof settings.fontSize })}
@@ -122,7 +122,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         </select>
 
         <select
-          aria-label={t('editor.pageSize')}
+          aria-label={t('editor:pageSize')}
           className="toolbar-select"
           value={settings.pageSize}
           onChange={(e) => useFileStore.getState().setSettings({ pageSize: e.target.value as typeof settings.pageSize })}
@@ -132,7 +132,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         </select>
 
         <select
-          aria-label={t('editor.margin')}
+          aria-label={t('editor:margin')}
           className="toolbar-select"
           value={settings.marginSize}
           onChange={(e) => useFileStore.getState().setSettings({ marginSize: e.target.value as typeof settings.marginSize })}
@@ -146,11 +146,11 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* View toggles */}
-      <div className="format-group" aria-label={t('editor.viewToggles')}>
+      <div className="format-group" aria-label={t('editor:viewToggles')}>
         <button
           type="button"
           className={`tool-button ${ui.isPagedMode ? 'active' : ''}`}
-          title={t('editor.paged')}
+          title={t('editor:paged')}
           onClick={ui.togglePaged}
           aria-pressed={ui.isPagedMode}
         >
@@ -159,7 +159,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${!ui.isPagedMode ? 'active' : ''}`}
-          title={t('editor.continuous')}
+          title={t('editor:continuous')}
           onClick={ui.togglePaged}
           aria-pressed={!ui.isPagedMode}
         >
@@ -169,7 +169,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${ui.autoScroll ? 'active' : ''}`}
-          title={t('editor.autoScroll')}
+          title={t('editor:autoScroll')}
           onClick={ui.toggleAutoScroll}
           aria-pressed={ui.autoScroll}
         >
@@ -179,7 +179,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${ui.syncScrollWithToc ? 'active' : ''}`}
-          title={t('editor.syncToc')}
+          title={t('editor:syncToc')}
           onClick={ui.toggleSyncToc}
           aria-pressed={ui.syncScrollWithToc}
         >
@@ -189,9 +189,9 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className="tool-button"
-          title={t('editor.copyMarkdown')}
+          title={t('editor:copyMarkdown')}
           onClick={handleCopyMD}
-          aria-label={t('editor.copyMarkdown')}
+          aria-label={t('editor:copyMarkdown')}
         >
           {copied ? <Check size={15} /> : <Copy size={15} />}
         </button>
@@ -200,13 +200,13 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* Zoom controls */}
-      <div className="format-group" aria-label={t('editor.zoom')}>
+      <div className="format-group" aria-label={t('editor:zoom')}>
         <button
           type="button"
           className="tool-button"
-          title={t('editor.zoomOut')}
+          title={t('editor:zoomOut')}
           onClick={() => ui.setZoom(ui.zoomLevel - 10)}
-          aria-label={t('editor.zoomOut')}
+          aria-label={t('editor:zoomOut')}
         >
           <ZoomOut size={15} />
         </button>
@@ -214,18 +214,18 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className="tool-button"
-          title={t('editor.zoomIn')}
+          title={t('editor:zoomIn')}
           onClick={() => ui.setZoom(ui.zoomLevel + 10)}
-          aria-label={t('editor.zoomIn')}
+          aria-label={t('editor:zoomIn')}
         >
           <ZoomIn size={15} />
         </button>
         <button
           type="button"
           className="tool-button"
-          title={t('editor.resetZoom')}
+          title={t('editor:resetZoom')}
           onClick={() => ui.setZoom(100)}
-          aria-label={t('editor.resetZoom')}
+          aria-label={t('editor:resetZoom')}
         >
           <RotateCcw size={15} />
         </button>
@@ -234,11 +234,11 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* View mode */}
-      <div className="format-group" aria-label={t('editor.viewMode')}>
+      <div className="format-group" aria-label={t('editor:viewMode')}>
         <button
           type="button"
           className={`tool-button ${viewMode === 'editor' ? 'active' : ''}`}
-          title={t('editor.editorOnly')}
+          title={t('editor:editorOnly')}
           onClick={() => onViewMode('editor')}
           aria-pressed={viewMode === 'editor'}
         >
@@ -247,7 +247,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${viewMode === 'split' ? 'active' : ''}`}
-          title={t('editor.split')}
+          title={t('editor:split')}
           onClick={() => onViewMode('split')}
           aria-pressed={viewMode === 'split'}
         >
@@ -256,7 +256,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${viewMode === 'preview' ? 'active' : ''}`}
-          title={t('editor.previewOnly')}
+          title={t('editor:previewOnly')}
           onClick={() => onViewMode('preview')}
           aria-pressed={viewMode === 'preview'}
         >

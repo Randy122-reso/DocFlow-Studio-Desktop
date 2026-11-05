@@ -62,26 +62,26 @@ export function TopNav(props: TopNavProps) {
         </div>
       </div>
 
-      <div className="document-identity" title={active?.filePath ?? t('common.notSaved')}>
+      <div className="document-identity" title={active?.filePath ?? t('notSaved')}>
         <FileText size={14} />
-        <span className="document-name">{active?.displayName ?? t('tabs.untitled')}</span>
-        {dirty ? <span className="dirty-dot" title={t('tabs.dirty')} /> : <span className="saved-dot" title={t('common.saved')} />}
+        <span className="document-name">{active?.displayName ?? t('tabs:untitled')}</span>
+        {dirty ? <span className="dirty-dot" title={t('tabs:dirty')} /> : <span className="saved-dot" title={t('saved')} />}
       </div>
 
       <div className="topbar-actions">
-        <button type="button" className="icon-button" title={`${t('common.newTab')} (Ctrl+N)`} onClick={props.onNew}>
+        <button type="button" className="icon-button" title={`${t('newTab')} (Ctrl+N)`} onClick={props.onNew}>
           <FilePlus2 size={17} />
         </button>
-        <button type="button" className="icon-button" title={`${t('common.newWindow')} (Ctrl+Shift+N)`} onClick={props.onNewWindow}>
+        <button type="button" className="icon-button" title={`${t('newWindow')} (Ctrl+Shift+N)`} onClick={props.onNewWindow}>
           <AppWindow size={17} />
         </button>
-        <button type="button" className="icon-button" title={`${t('common.open')} (Ctrl+O)`} onClick={props.onOpen}>
+        <button type="button" className="icon-button" title={`${t('open')} (Ctrl+O)`} onClick={props.onOpen}>
           <FolderOpen size={17} />
         </button>
-        <button type="button" className="icon-button save-button" title={`${t('common.save')} (Ctrl+S)`} onClick={props.onSave}>
+        <button type="button" className="icon-button save-button" title={`${t('save')} (Ctrl+S)`} onClick={props.onSave}>
           <Save size={17} />
         </button>
-        <button type="button" className="icon-button" title={`${t('common.saveAs')} (Ctrl+Shift+S)`} onClick={props.onSaveAs}>
+        <button type="button" className="icon-button" title={`${t('saveAs')} (Ctrl+Shift+S)`} onClick={props.onSaveAs}>
           <SaveAll size={17} />
         </button>
         <RecentFilesMenu
@@ -91,24 +91,24 @@ export function TopNav(props: TopNavProps) {
           onRemove={props.onRemoveRecent}
           onClear={props.onClearRecent}
         />
-        <button type="button" className="icon-button" title={`${t('find.findInFiles')} (Ctrl+Shift+F)`} onClick={props.onFindInFiles}>
+        <button type="button" className="icon-button" title={`${t('find:findInFiles')} (Ctrl+Shift+F)`} onClick={props.onFindInFiles}>
           <FileSearch size={17} />
         </button>
         <span className="topbar-divider" />
-        <button type="button" className="text-button accent" title={`${t('common.export')} (Ctrl+E)`} onClick={props.onExport}>
+        <button type="button" className="text-button accent" title={`${t('export')} (Ctrl+E)`} onClick={props.onExport}>
           <Download size={15} />
-          <span>{t('common.export')}</span>
+          <span>{t('export')}</span>
         </button>
-        <button type="button" className="icon-button" title={t('common.toc')} onClick={props.onToggleToc}>
+        <button type="button" className="icon-button" title={t('toc')} onClick={props.onToggleToc}>
           <PanelLeft size={17} />
         </button>
-        <button type="button" className="icon-button" title={`${t('common.zen')} (F11)`} onClick={props.onZen}>
+        <button type="button" className="icon-button" title={`${t('zen')} (F11)`} onClick={props.onZen}>
           <Focus size={17} />
         </button>
-        <button type="button" className="icon-button" title={t('common.code')} onClick={props.onCode}>
+        <button type="button" className="icon-button" title={t('code')} onClick={props.onCode}>
           <Braces size={17} />
         </button>
-        <button type="button" className="icon-button" title={t('common.documentSettings')} onClick={props.onSettings}>
+        <button type="button" className="icon-button" title={t('documentSettings')} onClick={props.onSettings}>
           <Settings2 size={17} />
         </button>
         <LanguageSwitcher />

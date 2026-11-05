@@ -17,6 +17,19 @@ import idErrors from './id/errors.json'
 
 export const LOCALE_NAMESPACES = ['common', 'editor', 'find', 'tabs', 'update', 'tray', 'errors'] as const
 
+export function normalizeI18nKey(key: string): string {
+  if (!key || key.includes(':')) return key
+  const dotIndex = key.indexOf('.')
+  if (dotIndex > 0) {
+    const ns = key.slice(0, dotIndex)
+    const rest = key.slice(dotIndex + 1)
+    if ((LOCALE_NAMESPACES as readonly string[]).includes(ns)) {
+      return ns === 'common' ? rest : `${ns}:${rest}`
+    }
+  }
+  return key
+}
+
 void i18n.use(initReactI18next).init({
   resources: {
     en: {

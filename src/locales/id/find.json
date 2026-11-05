@@ -46,5 +46,18 @@
   "writeChanges": "Tulis perubahan",
   "dryRunDone": "Pratinjau siap — tidak ada berkas yang diubah",
   "writeDone": "{{count}} berkas diperbarui",
-  "searching": "Mencari…"
+  "searching": "Mencari…",
+  "markAll": "Tandai Semua",
+  "clearMarks": "Hapus semua tanda",
+  "copyMarked": "Salin Teks Bertanda",
+  "bookmarkLine": "Bookmark baris",
+  "bookmarks": "Bookmark",
+  "noBookmarks": "Belum ada bookmark di dokumen ini",
+  "markedResult": "Menandai {{matches}} kecocokan di {{lines}} baris",
+  "copiedMarked": "Menyalin {{count}} baris bertanda ke clipboard",
+  "noMarkedLines": "Tidak ada baris bertanda untuk disalin",
+  "toggleBookmark": "Alihkan Bookmark (Ctrl+F2)",
+  "nextBookmark": "Bookmark Berikutnya (F2)",
+  "prevBookmark": "Bookmark Sebelumnya (Shift+F2)",
+  "clearAllBookmarks": "Hapus Semua Bookmark (Ctrl+Shift+F2)"
 }

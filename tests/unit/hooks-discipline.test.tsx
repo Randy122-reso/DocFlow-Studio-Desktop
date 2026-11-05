@@ -1,5 +1,6 @@
 import { beforeAll, describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import '../../src/locales'
 import App from '../../src/App'
 
 const unsubscribe = vi.fn()

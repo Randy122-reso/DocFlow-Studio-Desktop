@@ -3459,3 +3459,285 @@ kbd {
     break-inside: avoid;
   }
 }
+
+/* ── Editor Highlight Backdrop ─────────────────────────────────────── */
+
+/*
+ * The backdrop is an absolutely-positioned div that sits behind the
+ * transparent textarea. It mirrors the exact same font, padding, and
+ * line-height so that <mark> elements line up pixel-perfectly with the
+ * text rendered by the textarea.
+ *
+ * Rules:
+ *  - overflow: hidden + pointer-events: none  → never intercepts clicks
+ *  - color: transparent                       → text is invisible; only
+ *    the mark backgrounds show through
+ *  - white-space / word-break match textarea  → wrapping is identical
+ */
+.editor-backdrop {
+  position: absolute;
+  /* left is set dynamically via inline style to match gutter width;
+     we use left: 0 and the gutter pushes it via the flex layout.
+     Because .editor-container is flex, the backdrop must sit inside
+     the flex flow but on top of the textarea layer — we achieve this
+     with a wrapper trick: position the backdrop absolute within the
+     textarea's own slot. */
+  top: 0;
+  /* Align with the textarea: skip the gutter width */
+  left: 48px; /* matches .editor-gutter width */
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+
+  /* Mirror textarea font metrics exactly */
+  padding: 26px 30px 120px;
+  line-height: 1.75;
+  font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 14px;
+  tab-size: 2;
+
+  /* Text must be invisible — only the mark backgrounds show */
+  color: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.editor-backdrop.size-sm {
+  font-size: 12.5px;
+}
+
+.editor-backdrop.size-lg {
+  font-size: 16px;
+}
+
+/* Search match highlight — amber/yellow */
+mark.hl-search {
+  background: rgba(251, 191, 36, 0.50);
+  border-radius: 2px;
+  color: transparent;
+  box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.30);
+}
+
+/* Active / current match — bright orange, more opaque */
+mark.hl-current {
+  background: rgba(249, 115, 22, 0.80);
+  border-radius: 2px;
+  color: transparent;
+  box-shadow: 0 0 0 1.5px rgba(234, 88, 12, 0.70);
+}
+
+/* Bookmarked-line highlight — blue tint, full-line width */
+mark.hl-bookmark-line {
+  background: rgba(96, 165, 250, 0.20);
+  color: transparent;
+  /* Use inline-block so the mark covers the whole text width.
+     white-space: pre-wrap on the parent means newlines break naturally. */
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* When the backdrop is active, make the textarea truly transparent
+   so the backdrop marks show through cleanly */
+.editor-textarea.has-backdrop {
+  background: transparent !important;
+  caret-color: var(--accent); /* keep the cursor visible */
+}
+
+/* ── Editor Gutter & Bookmarks (Notepad++ Style) ─────────────────── */
+
+.editor-container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-gutter {
+  width: 48px;
+  flex-shrink: 0;
+  background: rgba(246, 243, 234, 0.85);
+  border-right: 1px solid var(--line);
+  user-select: none;
+  overflow: hidden;
+  font-family: inherit;
+  color: var(--muted-2);
+  text-align: right;
+  padding-top: 26px;
+  padding-bottom: 120px;
+}
+
+.gutter-line {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.1s, color 0.1s;
+}
+
+.gutter-line:hover {
+  background: rgba(180, 83, 9, 0.09);
+  color: var(--ink);
+}
+
+.gutter-line.is-bookmarked {
+  background: rgba(180, 83, 9, 0.16);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.gutter-line.is-current {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.gutter-bookmark {
+  margin-right: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
+}
+
+.bookmark-hover-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.gutter-line:hover .bookmark-hover-dot {
+  opacity: 0.6;
+}
+
+.gutter-number {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+.bookmark-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bookmark-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  cursor: pointer;
+}
+
+.bookmark-badge-btn:hover {
+  background: rgba(180, 83, 9, 0.15);
+}
+
+.bookmark-popover {
+  position: absolute;
+  top: 32px;
+  right: 12px;
+  width: 290px;
+  max-height: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 11.5px;
+}
+
+.bookmark-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.bookmark-popover-list {
+  overflow-y: auto;
+  max-height: 270px;
+}
+
+.bookmark-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+
+.bookmark-popover-item:hover {
+  background: var(--surface-2);
+}
+
+.bookmark-popover-line {
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  min-width: 44px;
+  font-size: 10.5px;
+}
+
+.bookmark-popover-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.find-options-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--line-strong);
+  margin: 0 4px;
+}
+
+.find-action.accent-subtle {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
+.find-action.accent-subtle:hover:not(:disabled) {
+  background: rgba(180, 83, 9, 0.18);
+}
+
+.bookmark-badge {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}

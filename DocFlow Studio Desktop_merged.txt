@@ -1,0 +1,529 @@
+--- GENERATED OUTPUT ---
+Source: D:\DocFlow Studio Desktop
+Date: 2026-11-05 20:06:14
+================================================================================
+
+📁 DIRECTORY STRUCTURE (Specific paths: 8 file(s))
+==================================================
+└── src
+    └── locales
+        ├── en
+        │   ├── common.json
+        │   ├── editor.json
+        │   ├── find.json
+        │   └── tabs.json
+        ├── id
+        │   ├── common.json
+        │   ├── editor.json
+        │   └── find.json
+        └── index.ts
+
+================================================================================
+
+📄 FILE CONTENTS
+==================================================
+
+--- START: src/locales/en/common.json ---
+--------------------------------------------------------------------------------
+{
+  "appName": "DocFlow Studio",
+  "save": "Save",
+  "saveAs": "Save As",
+  "open": "Open",
+  "openRecent": "Open Recent",
+  "new": "New",
+  "newTab": "New Tab",
+  "newWindow": "New Window",
+  "export": "Export",
+  "settings": "Settings",
+  "zen": "Zen Review",
+  "code": "Code Scripts",
+  "toc": "Table of Contents",
+  "close": "Close",
+  "cancel": "Cancel",
+  "ok": "OK",
+  "copy": "Copy",
+  "copied": "Copied",
+  "saved": "Saved",
+  "unsaved": "Unsaved",
+  "notSaved": "Not saved yet",
+  "words": "words",
+  "chars": "chars",
+  "selected": "selected",
+  "line": "Ln",
+  "column": "Col",
+  "markdown": "Markdown",
+  "showInFolder": "Show in folder",
+  "exportComplete": "Export complete",
+  "exporting": "Exporting…",
+  "everythingLocal": "Everything is rendered on this device.",
+  "publicationOutput": "Publication-grade output, generated locally.",
+  "exportTitle": "Export document",
+  "language": "Language",
+  "auto": "Automatic",
+  "english": "English",
+  "indonesian": "Bahasa Indonesia",
+  "quit": "Quit",
+  "dropToOpen": "Drop to open",
+  "dropHint": "Markdown, text, or any readable document",
+  "documentSettings": "Document settings",
+  "shortcuts": "Keyboard Shortcuts",
+  "userGuide": "User Guide",
+  "checkUpdates": "Check for Updates",
+  "draftRestored": "Draft restored",
+  "draftDiscarded": "Draft discarded",
+  "draftRestoredDetail": "Review the content and save when ready.",
+  "draftDiscardedDetail": "The recovery copy was removed.",
+  "newDocument": "New document",
+  "newDocumentDetail": "Start writing — Ctrl+S will choose a location.",
+  "openFailed": "This file cannot be opened",
+  "openFailedDetail": "Drag a Markdown file from your file manager.",
+  "saveFirst": "Save the document first",
+  "saveFirstDetail": "There is no file on disk yet.",
+  "externalChange": "{{name}} was changed by another program.",
+  "reloadFromDisk": "Reload from disk",
+  "keepEditing": "Keep editing",
+  "dismiss": "Dismiss",
+  "previewUnavailable": "The preview is not available",
+  "writeFailed": "The export could not be saved",
+  "saving": "Saving…",
+  "windows": "windows",
+  "settingsSubtitle": "Typography, page and application preferences.",
+  "themeSection": "Theme",
+  "typographySection": "Typography",
+  "pageSection": "Page",
+  "optionsSection": "Options",
+  "applicationSection": "Application",
+  "applicationDetail": "Language, updates and desktop behaviour.",
+  "headerFooter": "Header & footer",
+  "headerFooterDetail": "Show document title and export date on the page.",
+  "pageNumbers": "Page numbers",
+  "pageNumbersDetail": "Include a page number in the footer.",
+  "numberHeadings": "Number headings",
+  "numberHeadingsDetail": "Prefix H2+ headings with hierarchical numbers.",
+  "justifyText": "Justify text",
+  "justifyTextDetail": "Align paragraphs to both margins.",
+  "resetDefaults": "Reset defaults",
+  "done": "Done",
+  "languageHint": "Interface language. Automatic follows the operating system.",
+  "updatesSection": "Updates",
+  "updatesDetail": "Choose a release channel and automatic checks.",
+  "traySection": "System tray",
+  "trayDetail": "Control the tray icon and closing behaviour.",
+  "exportDocx": "Word Document",
+  "exportDocxDetail": "Native .docx with styles, tables and page numbers.",
+  "exportVector": "PDF — Vector",
+  "exportVectorDetail": "Selectable text and compact size (default).",
+  "exportRaster": "PDF — Raster",
+  "exportRasterDetail": "Pixel-perfect snapshot for complex layouts.",
+  "exportPrint": "PDF via Print",
+  "exportPrintDetail": "Selectable text, opens the system print dialog.",
+  "exportDoc": "Word HTML",
+  "exportDocDetail": "Legacy .doc that opens in Word and LibreOffice.",
+  "exportHtml": "Standalone HTML",
+  "exportHtmlDetail": "Self-contained page with embedded styles.",
+  "exportMarkdown": "Markdown",
+  "exportMarkdownDetail": "Plain source file, byte-for-byte.",
+  "vectorFallback": "Vector PDF cannot encode \"{{glyph}}\" — exported as raster instead."
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/en/common.json ---
+
+--- START: src/locales/en/editor.json ---
+--------------------------------------------------------------------------------
+{
+  "bold": "Bold",
+  "italic": "Italic",
+  "strike": "Strikethrough",
+  "inlineCode": "Inline code",
+  "codeBlock": "Code block",
+  "link": "Link",
+  "image": "Image",
+  "bullet": "Bullet list",
+  "numbered": "Numbered list",
+  "task": "Task list",
+  "hr": "Horizontal rule",
+  "h1": "Heading 1",
+  "h2": "Heading 2",
+  "h3": "Heading 3",
+  "quote": "Blockquote",
+  "table": "Table",
+  "theme": "Theme",
+  "fontSize": "Font size",
+  "fontFamily": "Font family",
+  "pageSize": "Page size",
+  "margin": "Margin",
+  "margins": "Margins",
+  "paperTone": "Paper tone",
+  "paged": "Paged mode",
+  "continuous": "Continuous mode",
+  "autoScroll": "Auto-scroll",
+  "syncToc": "Sync TOC scroll",
+  "copyMarkdown": "Copy Markdown",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "resetZoom": "Reset zoom",
+  "editorOnly": "Editor only",
+  "split": "Split",
+  "previewOnly": "Preview only",
+  "formatting": "Formatting",
+  "documentStyle": "Document style",
+  "viewToggles": "View toggles",
+  "zoom": "Zoom",
+  "viewMode": "View mode"
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/en/editor.json ---
+
+--- START: src/locales/en/find.json ---
+--------------------------------------------------------------------------------
+{
+  "find": "Find",
+  "replace": "Replace",
+  "findInFiles": "Find in Files",
+  "findPlaceholder": "Find in document…",
+  "replacePlaceholder": "Replace with…",
+  "matchCase": "Match case",
+  "wholeWord": "Whole word",
+  "modeNormal": "Normal",
+  "modeExtended": "Extended",
+  "modeRegex": "Regex",
+  "unicodeEscapes": "Unicode escapes",
+  "dotNewline": "Dot matches newline",
+  "wrapAround": "Wrap around",
+  "inSelection": "In selection",
+  "backward": "Backward",
+  "findNext": "Find next",
+  "findPrevious": "Find previous",
+  "replaceOne": "Replace",
+  "replaceAll": "Replace All",
+  "findInTabs": "Find All in Tabs",
+  "results": "Search results",
+  "noResults": "No matches",
+  "matches": "{{count}} matches",
+  "file": "File",
+  "line": "Line",
+  "column": "Col",
+  "search": "Search",
+  "stop": "Stop",
+  "chooseFolder": "Choose folder…",
+  "glob": "File pattern",
+  "replaceInFiles": "Replace in Files",
+  "dryRun": "Preview changes",
+  "applyChanges": "Apply changes",
+  "changes": "{{count}} files will change",
+  "filesScanned": "{{count}} files scanned",
+  "truncated": "Results truncated",
+  "history": "Search history",
+  "close": "Close find bar",
+  "showReplace": "Show replace",
+  "hideReplace": "Hide replace",
+  "invalidRegex": "Invalid regular expression",
+  "searchFailed": "Search failed",
+  "clearResults": "Clear results",
+  "preview": "Preview",
+  "writeChanges": "Write changes",
+  "dryRunDone": "Preview ready — no files were modified",
+  "writeDone": "{{count}} files updated",
+  "searching": "Searching…"
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/en/find.json ---
+
+--- START: src/locales/en/tabs.json ---
+--------------------------------------------------------------------------------
+{
+  "tabs": "Tabs",
+  "close": "Close tab",
+  "closeOthers": "Close other tabs",
+  "closeRight": "Close tabs to the right",
+  "closeLeft": "Close tabs to the left",
+  "pin": "Pin tab",
+  "unpin": "Unpin tab",
+  "detach": "Move to new window",
+  "newTab": "New tab",
+  "untitled": "Untitled",
+  "maxTabsReached": "Maximum number of tabs reached",
+  "maxTabsDetail": "Close a tab before opening another one.",
+  "maxWindowsReached": "Maximum number of windows reached",
+  "maxWindowsDetail": "Close a window before detaching another tab.",
+  "pinnedTitle": "Pinned tab",
+  "pinnedMessage": "\"{{name}}\" is pinned. Unpin and close it?",
+  "unpinAndClose": "Unpin and Close",
+  "detached": "Tab moved to a new window",
+  "copyPath": "Copy full path",
+  "reveal": "Reveal in folder",
+  "dirty": "Unsaved changes"
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/en/tabs.json ---
+
+--- START: src/locales/id/common.json ---
+--------------------------------------------------------------------------------
+{
+  "appName": "DocFlow Studio",
+  "save": "Simpan",
+  "saveAs": "Simpan Sebagai",
+  "open": "Buka",
+  "openRecent": "Buka Terbaru",
+  "new": "Baru",
+  "newTab": "Tab Baru",
+  "newWindow": "Jendela Baru",
+  "export": "Ekspor",
+  "settings": "Pengaturan",
+  "zen": "Mode Zen",
+  "code": "Skrip Kode",
+  "toc": "Daftar Isi",
+  "close": "Tutup",
+  "cancel": "Batal",
+  "ok": "OK",
+  "copy": "Salin",
+  "copied": "Tersalin",
+  "saved": "Tersimpan",
+  "unsaved": "Belum disimpan",
+  "notSaved": "Belum disimpan",
+  "words": "kata",
+  "chars": "karakter",
+  "selected": "dipilih",
+  "line": "Ln",
+  "column": "Kol",
+  "markdown": "Markdown",
+  "showInFolder": "Tampilkan di folder",
+  "exportComplete": "Ekspor selesai",
+  "exporting": "Mengekspor…",
+  "everythingLocal": "Semua dirender di perangkat ini.",
+  "publicationOutput": "Hasil siap publikasi, dibuat secara lokal.",
+  "exportTitle": "Ekspor dokumen",
+  "language": "Bahasa",
+  "auto": "Otomatis",
+  "english": "English",
+  "indonesian": "Bahasa Indonesia",
+  "quit": "Keluar",
+  "dropToOpen": "Lepaskan untuk membuka",
+  "dropHint": "Markdown, teks, atau dokumen yang dapat dibaca",
+  "documentSettings": "Pengaturan dokumen",
+  "shortcuts": "Pintasan Keyboard",
+  "userGuide": "Panduan Pengguna",
+  "checkUpdates": "Periksa Pembaruan",
+  "draftRestored": "Draf dipulihkan",
+  "draftDiscarded": "Draf dibuang",
+  "draftRestoredDetail": "Tinjau isi dan simpan bila sudah siap.",
+  "draftDiscardedDetail": "Salinan pemulihan telah dihapus.",
+  "newDocument": "Dokumen baru",
+  "newDocumentDetail": "Mulai menulis — Ctrl+S akan memilih lokasi.",
+  "openFailed": "Berkas ini tidak dapat dibuka",
+  "openFailedDetail": "Seret berkas Markdown dari pengelola berkas Anda.",
+  "saveFirst": "Simpan dokumen terlebih dahulu",
+  "saveFirstDetail": "Belum ada berkas di disk.",
+  "externalChange": "{{name}} diubah oleh program lain.",
+  "reloadFromDisk": "Muat ulang dari disk",
+  "keepEditing": "Lanjutkan mengedit",
+  "dismiss": "Tutup",
+  "previewUnavailable": "Pratinjau tidak tersedia",
+  "writeFailed": "Ekspor tidak dapat disimpan",
+  "saving": "Menyimpan…",
+  "windows": "jendela",
+  "settingsSubtitle": "Preferensi tipografi, halaman, dan aplikasi.",
+  "themeSection": "Tema",
+  "typographySection": "Tipografi",
+  "pageSection": "Halaman",
+  "optionsSection": "Opsi",
+  "applicationSection": "Aplikasi",
+  "applicationDetail": "Bahasa, pembaruan, dan perilaku desktop.",
+  "headerFooter": "Header & footer",
+  "headerFooterDetail": "Tampilkan judul dokumen dan tanggal ekspor pada halaman.",
+  "pageNumbers": "Nomor halaman",
+  "pageNumbersDetail": "Sertakan nomor halaman di footer.",
+  "numberHeadings": "Nomor heading",
+  "numberHeadingsDetail": "Beri awalan nomor hierarkis pada heading H2+.",
+  "justifyText": "Rata kanan-kiri",
+  "justifyTextDetail": "Sejajarkan paragraf ke kedua margin.",
+  "resetDefaults": "Kembalikan default",
+  "done": "Selesai",
+  "languageHint": "Bahasa antarmuka. Otomatis mengikuti sistem operasi.",
+  "updatesSection": "Pembaruan",
+  "updatesDetail": "Pilih kanal rilis dan pemeriksaan otomatis.",
+  "traySection": "System tray",
+  "trayDetail": "Atur ikon tray dan perilaku saat menutup.",
+  "exportDocx": "Dokumen Word",
+  "exportDocxDetail": "File .docx native dengan gaya, tabel, dan nomor halaman.",
+  "exportVector": "PDF — Vektor",
+  "exportVectorDetail": "Teks dapat dipilih dan ukuran ringkas (default).",
+  "exportRaster": "PDF — Raster",
+  "exportRasterDetail": "Snapshot presisi piksel untuk tata letak kompleks.",
+  "exportPrint": "PDF via Cetak",
+  "exportPrintDetail": "Teks dapat dipilih, membuka dialog cetak sistem.",
+  "exportDoc": "Word HTML",
+  "exportDocDetail": "File .doc lama yang dapat dibuka di Word dan LibreOffice.",
+  "exportHtml": "HTML Mandiri",
+  "exportHtmlDetail": "Halaman mandiri dengan gaya tertanam.",
+  "exportMarkdown": "Markdown",
+  "exportMarkdownDetail": "File sumber apa adanya, byte-per-byte.",
+  "vectorFallback": "PDF vektor tidak dapat menyandikan \"{{glyph}}\" — diekspor sebagai raster."
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/id/common.json ---
+
+--- START: src/locales/id/editor.json ---
+--------------------------------------------------------------------------------
+{
+  "bold": "Tebal",
+  "italic": "Miring",
+  "strike": "Coret",
+  "inlineCode": "Kode inline",
+  "codeBlock": "Blok kode",
+  "link": "Tautan",
+  "image": "Gambar",
+  "bullet": "Daftar butir",
+  "numbered": "Daftar bernomor",
+  "task": "Daftar tugas",
+  "hr": "Garis horizontal",
+  "h1": "Judul 1",
+  "h2": "Judul 2",
+  "h3": "Judul 3",
+  "quote": "Kutipan",
+  "table": "Tabel",
+  "theme": "Tema",
+  "fontSize": "Ukuran font",
+  "fontFamily": "Jenis font",
+  "pageSize": "Ukuran halaman",
+  "margin": "Margin",
+  "margins": "Margin",
+  "paperTone": "Warna kertas",
+  "paged": "Mode halaman",
+  "continuous": "Mode kontinu",
+  "autoScroll": "Gulir otomatis",
+  "syncToc": "Sinkronkan gulir daftar isi",
+  "copyMarkdown": "Salin Markdown",
+  "zoomIn": "Perbesar",
+  "zoomOut": "Perkecil",
+  "resetZoom": "Reset zoom",
+  "editorOnly": "Hanya editor",
+  "split": "Terpisah",
+  "previewOnly": "Hanya pratinjau",
+  "formatting": "Pemformatan",
+  "documentStyle": "Gaya dokumen",
+  "viewToggles": "Tombol tampilan",
+  "zoom": "Zoom",
+  "viewMode": "Mode tampilan"
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/id/editor.json ---
+
+--- START: src/locales/id/find.json ---
+--------------------------------------------------------------------------------
+{
+  "find": "Cari",
+  "replace": "Ganti",
+  "findInFiles": "Cari di Berkas",
+  "findPlaceholder": "Cari di dokumen…",
+  "replacePlaceholder": "Ganti dengan…",
+  "matchCase": "Bedakan huruf",
+  "wholeWord": "Kata utuh",
+  "modeNormal": "Normal",
+  "modeExtended": "Extended",
+  "modeRegex": "Regex",
+  "unicodeEscapes": "Escape Unicode",
+  "dotNewline": "Titik mencakup baris baru",
+  "wrapAround": "Kembali ke awal",
+  "inSelection": "Dalam pilihan",
+  "backward": "Ke belakang",
+  "findNext": "Cari berikutnya",
+  "findPrevious": "Cari sebelumnya",
+  "replaceOne": "Ganti",
+  "replaceAll": "Ganti Semua",
+  "findInTabs": "Cari di Semua Tab",
+  "results": "Hasil pencarian",
+  "noResults": "Tidak ada kecocokan",
+  "matches": "{{count}} kecocokan",
+  "file": "Berkas",
+  "line": "Baris",
+  "column": "Kol",
+  "search": "Cari",
+  "stop": "Hentikan",
+  "chooseFolder": "Pilih folder…",
+  "glob": "Pola berkas",
+  "replaceInFiles": "Ganti di Berkas",
+  "dryRun": "Pratinjau perubahan",
+  "applyChanges": "Terapkan perubahan",
+  "changes": "{{count}} berkas akan berubah",
+  "filesScanned": "{{count}} berkas dipindai",
+  "truncated": "Hasil dipotong",
+  "history": "Riwayat pencarian",
+  "close": "Tutup bilah pencarian",
+  "showReplace": "Tampilkan ganti",
+  "hideReplace": "Sembunyikan ganti",
+  "invalidRegex": "Ekspresi reguler tidak valid",
+  "searchFailed": "Pencarian gagal",
+  "clearResults": "Hapus hasil",
+  "preview": "Pratinjau",
+  "writeChanges": "Tulis perubahan",
+  "dryRunDone": "Pratinjau siap — tidak ada berkas yang diubah",
+  "writeDone": "{{count}} berkas diperbarui",
+  "searching": "Mencari…"
+}
+
+--------------------------------------------------------------------------------
+--- END: src/locales/id/find.json ---
+
+--- START: src/locales/index.ts ---
+--------------------------------------------------------------------------------
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import enCommon from './en/common.json'
+import enEditor from './en/editor.json'
+import enFind from './en/find.json'
+import enTabs from './en/tabs.json'
+import enUpdate from './en/update.json'
+import enTray from './en/tray.json'
+import enErrors from './en/errors.json'
+import idCommon from './id/common.json'
+import idEditor from './id/editor.json'
+import idFind from './id/find.json'
+import idTabs from './id/tabs.json'
+import idUpdate from './id/update.json'
+import idTray from './id/tray.json'
+import idErrors from './id/errors.json'
+
+export const LOCALE_NAMESPACES = ['common', 'editor', 'find', 'tabs', 'update', 'tray', 'errors'] as const
+
+void i18n.use(initReactI18next).init({
+  resources: {
+    en: {
+      common: enCommon,
+      editor: enEditor,
+      find: enFind,
+      tabs: enTabs,
+      update: enUpdate,
+      tray: enTray,
+      errors: enErrors
+    },
+    id: {
+      common: idCommon,
+      editor: idEditor,
+      find: idFind,
+      tabs: idTabs,
+      update: idUpdate,
+      tray: idTray,
+      errors: idErrors
+    }
+  },
+  lng: 'en',
+  fallbackLng: 'en',
+  ns: [...LOCALE_NAMESPACES],
+  defaultNS: 'common',
+  interpolation: { escapeValue: false },
+  returnNull: false
+})
+
+export default i18n
+
+--------------------------------------------------------------------------------
+--- END: src/locales/index.ts ---
+

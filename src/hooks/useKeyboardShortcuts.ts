@@ -16,6 +16,11 @@ export interface ShortcutHandlers {
   onNewWindow(): void
   onFindNext(): void
   onFindPrevious(): void
+  onToggleBookmark?(): void
+  onNextBookmark?(): void
+  onPrevBookmark?(): void
+  onClearBookmarks?(): void
+  onCopyMarked?(): void
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers): void {
@@ -24,6 +29,16 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers): void {
 
   useEffect(() => {
     const listener = (event: KeyboardEvent): void => {
+      if (event.key === 'F2') {
+        event.preventDefault()
+        const modifier = event.ctrlKey || event.metaKey
+        if (modifier && event.shiftKey) ref.current.onClearBookmarks?.()
+        else if (modifier) ref.current.onToggleBookmark?.()
+        else if (event.shiftKey) ref.current.onPrevBookmark?.()
+        else ref.current.onNextBookmark?.()
+        return
+      }
+
       if (event.key === 'F3') {
         event.preventDefault()
         if (event.shiftKey) ref.current.onFindPrevious()
@@ -34,6 +49,12 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers): void {
       const modifier = event.ctrlKey || event.metaKey
       if (!modifier) return
       const key = event.key.toLowerCase()
+
+      if (key === 'b' && event.shiftKey) {
+        event.preventDefault()
+        ref.current.onCopyMarked?.()
+        return
+      }
 
       if (key === 'tab') {
         event.preventDefault()

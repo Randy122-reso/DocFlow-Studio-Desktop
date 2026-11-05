@@ -11,6 +11,7 @@ import { useUIStore } from './store/uiStore'
 import { useRecentFiles } from './hooks/useRecentFiles'
 import { useSettingsSync } from './hooks/useSettingsSync'
 import { useWindowTitle } from './hooks/useWindowTitle'
+import { useBookmarks } from './hooks/useBookmarks'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useScrollSync } from './hooks/useScrollSync'
 import { useTabManager } from './hooks/useTabManager'
@@ -88,6 +89,7 @@ export default function App() {
 
   const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
   const { findNext, findPrevious } = useFindReplace(editorRef)
+  const bookmarkApi = useBookmarks(editorRef)
 
   const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
   const stats = useMemo(() => computeDocumentStats(content), [content])
@@ -98,25 +100,59 @@ export default function App() {
     if (id) useTabStore.getState().setBuffer(id, value)
   }, [])
 
+  const getSelectedText = useCallback((): string => {
+    const editor = editorRef.current
+    if (editor && editor.selectionEnd > editor.selectionStart) {
+      return editor.value.substring(editor.selectionStart, editor.selectionEnd)
+    }
+    const windowSel = window.getSelection()?.toString() ?? ''
+    return windowSel
+  }, [])
+
   const openFind = useCallback((showReplace = false) => {
     const search = useSearchStore.getState()
     const ui = useUIStore.getState()
     if (ui.viewMode === 'preview') ui.setUIState({ viewMode: 'split' })
-    search.openFind(showReplace)
+
     const editor = editorRef.current
-    if (editor && document.activeElement === editor && editor.selectionEnd > editor.selectionStart) {
+    if (editor && editor.selectionEnd > editor.selectionStart) {
       search.setSelectionRange({ start: editor.selectionStart, end: editor.selectionEnd })
     } else {
       search.setSelectionRange(null)
     }
-  }, [])
+
+    const isFindBarFocused = Boolean(document.activeElement?.closest('.find-bar'))
+    if (!isFindBarFocused) {
+      const selected = getSelectedText().trim()
+      if (selected) {
+        const singleLine = selected.includes('\n') ? selected.split(/\r?\n/)[0].trim() : selected
+        if (singleLine) {
+          search.setQuery(singleLine)
+        }
+      }
+    }
+
+    search.openFind(showReplace)
+  }, [getSelectedText])
 
   const openFindInFiles = useCallback(() => {
     const search = useSearchStore.getState()
     const ui = useUIStore.getState()
     if (ui.viewMode === 'preview') ui.setUIState({ viewMode: 'split' })
+
+    const isFindFilesFocused = Boolean(document.activeElement?.closest('.find-files'))
+    if (!isFindFilesFocused) {
+      const selected = getSelectedText().trim()
+      if (selected) {
+        const singleLine = selected.includes('\n') ? selected.split(/\r?\n/)[0].trim() : selected
+        if (singleLine) {
+          search.setQuery(singleLine)
+        }
+      }
+    }
+
     search.openFindInFiles()
-  }, [])
+  }, [getSelectedText])
 
   const openExport = useCallback(() => {
     if (useUIStore.getState().viewMode === 'editor') {
@@ -137,7 +173,7 @@ export default function App() {
   const revealInFolder = useCallback(() => {
     const current = useTabStore.getState().getActive()
     if (!current?.filePath) {
-      useFileStore.getState().showToast('info', t('common.saveFirst'), t('common.saveFirstDetail'))
+      useFileStore.getState().showToast('info', t('saveFirst'), t('saveFirstDetail'))
       return
     }
     void window.docflow.app.showItemInFolder(current.filePath).catch(() => undefined)
@@ -283,7 +319,7 @@ export default function App() {
         case 'guide':
           useFileStore
             .getState()
-            .showToast('info', t('common.userGuide'), 'Open docs/USER_GUIDE.md in the project folder for the full manual.')
+            .showToast('info', t('userGuide'), 'Open docs/USER_GUIDE.md in the project folder for the full manual.')
           break
         default:
           break
@@ -408,7 +444,7 @@ export default function App() {
     if (!file) return
     const path = window.docflow.file.getPathForFile(file)
     if (!path) {
-      useFileStore.getState().showToast('error', t('common.openFailed'), t('common.openFailedDetail'))
+      useFileStore.getState().showToast('error', t('openFailed'), t('openFailedDetail'))
       return
     }
     await managerRef.current.openPath(path)
@@ -420,7 +456,21 @@ export default function App() {
     onSave: () => void managerRef.current.save(),
     onSaveAs: () => void managerRef.current.saveAs(),
     onExport: openExport,
-    onFind: () => (useSearchStore.getState().isOpen ? findNext() : openFind(false)),
+    onFind: () => {
+      const isFindBarFocused = Boolean(document.activeElement?.closest('.find-bar'))
+      const editor = editorRef.current
+      const hasEditorSelection = Boolean(editor && editor.selectionEnd > editor.selectionStart)
+      const hasWindowSelection = Boolean(window.getSelection()?.toString().trim())
+      const hasSelection = hasEditorSelection || hasWindowSelection
+
+      if (hasSelection && !isFindBarFocused) {
+        openFind(false)
+      } else if (useSearchStore.getState().isOpen && isFindBarFocused) {
+        findNext()
+      } else {
+        openFind(false)
+      }
+    },
     onReplace: () => openFind(true),
     onFindInFiles: openFindInFiles,
     onCloseTab: () => {
@@ -435,7 +485,12 @@ export default function App() {
       if (useSearchStore.getState().query) findNext()
       else openFind(false)
     },
-    onFindPrevious: () => findPrevious()
+    onFindPrevious: () => findPrevious(),
+    onToggleBookmark: () => void bookmarkApi.toggleBookmark(),
+    onNextBookmark: () => void bookmarkApi.goToNextBookmark(),
+    onPrevBookmark: () => void bookmarkApi.goToPrevBookmark(),
+    onClearBookmarks: () => void bookmarkApi.clearMarks(),
+    onCopyMarked: () => void bookmarkApi.copyMarkedLines()
   })
 
   const title = fileName.replace(/\.[^.]+$/, '')
@@ -506,20 +561,20 @@ export default function App() {
             <div className="external-banner">
               <AlertTriangle size={15} />
               <span>
-                <strong>{fileName}</strong> {t('common.externalChange', { name: '' }).trim()}
+                <strong>{fileName}</strong> {t('externalChange', { name: '' }).trim()}
               </span>
               <div className="external-actions">
                 <button type="button" onClick={() => void manager.reloadExternal(activeTabId ?? undefined)}>
-                  <RefreshCw size={13} /> {t('common.reloadFromDisk')}
+                  <RefreshCw size={13} /> {t('reloadFromDisk')}
                 </button>
                 <button type="button" onClick={() => manager.dismissExternal(activeTabId ?? undefined)}>
-                  {t('common.keepEditing')}
+                  {t('keepEditing')}
                 </button>
                 <button
                   type="button"
                   className="external-close"
                   onClick={() => manager.dismissExternal(activeTabId ?? undefined)}
-                  title={t('common.dismiss')}
+                  title={t('dismiss')}
                 >
                   <X size={13} />
                 </button>
@@ -572,8 +627,8 @@ export default function App() {
         <div className="drop-overlay">
           <div className="drop-card">
             <span className="drop-icon">↓</span>
-            <strong>{t('common.dropToOpen')}</strong>
-            <span>{t('common.dropHint')}</span>
+            <strong>{t('dropToOpen')}</strong>
+            <span>{t('dropHint')}</span>
           </div>
         </div>
       )}

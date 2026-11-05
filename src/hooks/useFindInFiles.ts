@@ -37,7 +37,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
       return true
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast(described.kind, t('find.searchFailed'), described.detail || described.message)
+      useFileStore.getState().showToast(described.kind, t('find:searchFailed'), described.detail || described.message)
       return false
     }
   }, [t])
@@ -45,7 +45,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
   const search = useCallback(async (): Promise<number> => {
     const state = useSearchStore.getState()
     if (!state.inFilesRoot) {
-      useFileStore.getState().showToast('warning', t('find.chooseFolder'), '')
+      useFileStore.getState().showToast('warning', t('find:chooseFolder'), '')
       return 0
     }
     if (!state.query.trim()) return 0
@@ -66,13 +66,13 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
         filesScanned: response.filesScanned
       })
       if (response.cancelled) {
-        useFileStore.getState().showToast('info', t('find.stop'), '')
+        useFileStore.getState().showToast('info', t('find:stop'), '')
       }
       return response.results.length
     } catch (error) {
       const described = describeError(error)
       useSearchStore.getState().setInFilesError(described.detail || described.message)
-      useFileStore.getState().showToast(described.kind, t('find.searchFailed'), described.detail || described.message)
+      useFileStore.getState().showToast(described.kind, t('find:searchFailed'), described.detail || described.message)
       return 0
     } finally {
       useSearchStore.getState().setInFilesBusy(false)
@@ -93,7 +93,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
     async (dryRun: boolean) => {
       const state = useSearchStore.getState()
       if (!state.inFilesRoot || !state.query.trim()) {
-        useFileStore.getState().showToast('warning', t('find.chooseFolder'), '')
+        useFileStore.getState().showToast('warning', t('find:chooseFolder'), '')
         return null
       }
       state.setReplaceBusy(true)
@@ -110,7 +110,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
         return response
       } catch (error) {
         const described = describeError(error)
-        useFileStore.getState().showToast(described.kind, t('find.searchFailed'), described.detail || described.message)
+        useFileStore.getState().showToast(described.kind, t('find:searchFailed'), described.detail || described.message)
         return null
       } finally {
         useSearchStore.getState().setReplaceBusy(false)
@@ -123,7 +123,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
     const response = await runReplace(true)
     if (!response) return []
     if (!response.cancelled) {
-      useFileStore.getState().showToast('info', t('find.dryRunDone'), '')
+      useFileStore.getState().showToast('info', t('find:dryRunDone'), '')
     }
     return response.changes
   }, [runReplace, t])
@@ -138,10 +138,10 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
     const choice = await window.docflow.dialog
       .message({
         type: 'question',
-        title: t('find.replaceInFiles'),
-        message: t('find.changes', { count: state.replacePreview.length }),
+        title: t('find:replaceInFiles'),
+        message: t('find:changes', { count: state.replacePreview.length }),
         detail: detail.slice(0, 8000),
-        buttons: [t('find.writeChanges'), t('common.cancel')],
+        buttons: [t('find:writeChanges'), t('cancel')],
         defaultId: 0,
         cancelId: 1
       })
@@ -172,7 +172,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
         // A file may have been removed between replace and refresh.
       }
     }
-    useFileStore.getState().showToast('success', t('find.writeDone', { count: response.changes.length }), '')
+    useFileStore.getState().showToast('success', t('find:writeDone', { count: response.changes.length }), '')
     await search()
     return true
   }, [runReplace, search, t])
@@ -195,7 +195,7 @@ export function useFindInFiles(editorRef: RefObject<HTMLTextAreaElement | null>)
         goToResult({ ...result, tabId: opened.id })
       } catch (error) {
         const described = describeError(error)
-        useFileStore.getState().showToast(described.kind, t('find.searchFailed'), described.detail || described.message)
+        useFileStore.getState().showToast(described.kind, t('find:searchFailed'), described.detail || described.message)
       }
     },
     [goToResult, t]

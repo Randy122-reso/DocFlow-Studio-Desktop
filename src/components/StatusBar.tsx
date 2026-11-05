@@ -46,24 +46,24 @@ export function StatusBar({
     <footer className="statusbar">
       <div className="status-left">
         {filePath ? <HardDrive size={13} /> : <FileText size={13} />}
-        <span className="status-path" title={filePath ?? t('common.notSaved')}>
-          {filePath ?? t('common.notSaved')}
+        <span className="status-path" title={filePath ?? t('notSaved')}>
+          {filePath ?? t('notSaved')}
         </span>
       </div>
       <div className="status-right">
         <span className={`status-dirty ${dirty ? 'is-dirty' : 'is-saved'}`}>
           {dirty ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-          {saving ? t('common.exporting') : dirty ? t('common.unsaved') : t('common.saved')}
+          {saving ? t('exporting') : dirty ? t('unsaved') : t('saved')}
         </span>
         <span className="status-divider" />
-        <span>{t('common.line')} {cursor.line}, {t('common.column')} {cursor.column}</span>
-        {cursor.selection > 0 && <span>{cursor.selection} {t('common.selected')}</span>}
+        <span>{t('line')} {cursor.line}, {t('column')} {cursor.column}</span>
+        {cursor.selection > 0 && <span>{cursor.selection} {t('selected')}</span>}
         <span className="status-divider" />
-        <span>{stats.words.toLocaleString()} {t('common.words')}</span>
-        <span>{stats.characters.toLocaleString()} {t('common.chars')}</span>
+        <span>{stats.words.toLocaleString()} {t('words')}</span>
+        <span>{stats.characters.toLocaleString()} {t('chars')}</span>
         <span className="status-divider" />
-        <span>{tabCount} {t('tabs.tabs')}</span>
-        <span>{windowCount} {locale === 'id' ? 'jendela' : 'windows'}</span>
+        <span>{tabCount} {t('tabs:tabs')}</span>
+        <span>{windowCount} {t('windows')}</span>
         <span>{zoomLevel}%</span>
         <span className="status-divider" />
         <span>{ENCODING_LABEL[encoding]}</span>

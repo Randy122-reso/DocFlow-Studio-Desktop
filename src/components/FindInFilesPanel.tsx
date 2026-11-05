@@ -19,9 +19,12 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
 
   useEffect(() => {
     if (!search.inFilesOpen) return
-    const timer = window.setTimeout(() => queryRef.current?.focus(), 30)
+    const timer = window.setTimeout(() => {
+      queryRef.current?.focus()
+      queryRef.current?.select()
+    }, 30)
     return () => window.clearTimeout(timer)
-  }, [search.inFilesOpen])
+  }, [search.inFilesOpen, search.focusToken])
 
   if (!search.inFilesOpen) return null
 
@@ -39,22 +42,22 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
   }
 
   return (
-    <section className="find-files" aria-label={t('find.findInFiles')}>
+    <section className="find-files" aria-label={t('find:findInFiles')}>
       <header className="find-results-head">
-        <strong>{t('find.findInFiles')}</strong>
-        <button type="button" className="find-icon" onClick={clear} title={t('find.clearResults')}>
+        <strong>{t('find:findInFiles')}</strong>
+        <button type="button" className="find-icon" onClick={clear} title={t('find:clearResults')}>
           <RefreshCw size={14} />
         </button>
-        <button type="button" className="find-icon" onClick={() => search.closeFindInFiles()} title={t('find.close')}>
+        <button type="button" className="find-icon" onClick={() => search.closeFindInFiles()} title={t('find:close')}>
           <X size={14} />
         </button>
       </header>
 
       <div className="find-files-controls">
         <div className="find-folder">
-          <input type="text" readOnly value={search.inFilesRoot} placeholder={t('find.chooseFolder')} aria-label={t('find.chooseFolder')} />
+          <input type="text" readOnly value={search.inFilesRoot} placeholder={t('find:chooseFolder')} aria-label={t('find:chooseFolder')} />
           <button type="button" className="find-action" onClick={() => void pickRoot()}>
-            <FolderOpen size={14} /> {t('find.chooseFolder')}
+            <FolderOpen size={14} /> {t('find:chooseFolder')}
           </button>
         </div>
         <input
@@ -63,7 +66,7 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
           value={search.inFilesGlob}
           onChange={(event) => search.setInFilesGlob(event.target.value)}
           placeholder="**/*.{md,markdown,txt}"
-          aria-label={t('find.glob')}
+          aria-label={t('find:glob')}
         />
         <div className="find-query-row">
           <Search size={15} />
@@ -79,16 +82,16 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
                 void runSearch()
               }
             }}
-            placeholder={t('find.findPlaceholder')}
-            aria-label={t('find.find')}
+            placeholder={t('find:findPlaceholder')}
+            aria-label={t('find:find')}
           />
           {search.inFilesBusy ? (
             <button type="button" className="find-action" onClick={() => void cancel()}>
-              <Square size={13} /> {t('find.stop')}
+              <Square size={13} /> {t('find:stop')}
             </button>
           ) : (
             <button type="button" className="find-action" onClick={() => void runSearch()}>
-              {t('find.search')}
+              {t('find:search')}
             </button>
           )}
         </div>
@@ -98,11 +101,11 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
             className="find-input"
             value={search.replaceWith}
             onChange={(event) => search.setReplaceWith(event.target.value)}
-            placeholder={t('find.replacePlaceholder')}
-            aria-label={t('find.replace')}
+            placeholder={t('find:replacePlaceholder')}
+            aria-label={t('find:replace')}
           />
           <button type="button" className="find-action" disabled={search.replaceBusy} onClick={() => void previewReplace()}>
-            {t('find.dryRun')}
+            {t('find:dryRun')}
           </button>
           <button
             type="button"
@@ -110,16 +113,16 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
             disabled={search.replaceBusy || !search.replacePreview || search.replacePreview.length === 0}
             onClick={() => void applyReplace()}
           >
-            {t('find.applyChanges')}
+            {t('find:applyChanges')}
           </button>
         </div>
         <div className="find-files-meta">
-          {search.inFilesBusy && <span><Loader2 size={13} className="spin" /> {t('find.searching')}</span>}
-          <span>{t('find.filesScanned', { count: search.inFilesScanned })}</span>
-          {search.inFilesTruncated && <span className="find-warning">{t('find.truncated')}</span>}
+          {search.inFilesBusy && <span><Loader2 size={13} className="spin" /> {t('find:searching')}</span>}
+          <span>{t('find:filesScanned', { count: search.inFilesScanned })}</span>
+          {search.inFilesTruncated && <span className="find-warning">{t('find:truncated')}</span>}
           {search.inFilesError && <span className="find-warning">{search.inFilesError}</span>}
           {search.replacePreview && (
-            <span>{t('find.changes', { count: search.replacePreview.length })}</span>
+            <span>{t('find:changes', { count: search.replacePreview.length })}</span>
           )}
         </div>
       </div>
@@ -140,7 +143,7 @@ export function FindInFilesPanel({ editorRef }: FindInFilesPanelProps) {
 
       <div className="find-results-body">
         {groups.size === 0 ? (
-          <p className="find-empty">{search.inFilesBusy ? t('find.searching') : t('find.noResults')}</p>
+          <p className="find-empty">{search.inFilesBusy ? t('find:searching') : t('find:noResults')}</p>
         ) : (
           [...groups.entries()].map(([filePath, results]) => (
             <div key={filePath} className="find-result-group">

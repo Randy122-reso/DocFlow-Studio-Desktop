@@ -32,18 +32,18 @@ export function FindResultsPanel({ editorRef }: FindResultsPanelProps) {
   }
 
   return (
-    <section className="find-results" aria-label={t('find.results')}>
+    <section className="find-results" aria-label={t('find:results')}>
       <header className="find-results-head">
-        <strong>{t('find.results')}</strong>
-        <span>{t('find.matches', { count: search.allResults.length })}</span>
-        {search.allResultsTruncated && <span className="find-warning">{t('find.truncated')}</span>}
-        <button type="button" className="find-icon" onClick={() => search.clearAllResults()} title={t('find.close')}>
+        <strong>{t('find:results')}</strong>
+        <span>{t('find:matches', { count: search.allResults.length })}</span>
+        {search.allResultsTruncated && <span className="find-warning">{t('find:truncated')}</span>}
+        <button type="button" className="find-icon" onClick={() => search.clearAllResults()} title={t('find:close')}>
           <X size={14} />
         </button>
       </header>
       <div className="find-results-body">
         {groups.size === 0 ? (
-          <p className="find-empty">{t('find.noResults')}</p>
+          <p className="find-empty">{t('find:noResults')}</p>
         ) : (
           [...groups.entries()].map(([key, results]) => (
             <div key={key} className="find-result-group">

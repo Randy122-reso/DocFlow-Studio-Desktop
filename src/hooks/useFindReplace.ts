@@ -113,7 +113,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
       return true
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast('error', t('find.invalidRegex'), described.detail || described.message)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
       return false
     }
   }, [collectMatches, editorRef, selectMatch, t])
@@ -140,7 +140,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
       return true
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast('error', t('find.invalidRegex'), described.detail || described.message)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
       return false
     }
   }, [collectMatches, editorRef, selectMatch, t])
@@ -172,7 +172,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
       return findNext()
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast('error', t('find.invalidRegex'), described.detail || described.message)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
       return false
     }
   }, [editorRef, findNext, t])
@@ -205,7 +205,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
       return matches.length
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast('error', t('find.invalidRegex'), described.detail || described.message)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
       return 0
     }
   }, [editorRef, t])
@@ -253,7 +253,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
       return results.length
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast('error', t('find.invalidRegex'), described.detail || described.message)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
       return 0
     }
   }, [t])

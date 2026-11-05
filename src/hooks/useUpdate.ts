@@ -39,14 +39,14 @@ export function useUpdate(): UpdateApi {
       const state = await window.docflow.update.check()
       setUpdate(state)
       if (state.status === 'idle' && !state.availableVersion) {
-        useFileStore.getState().showToast('info', t('update.upToDate'))
+        useFileStore.getState().showToast('info', t('update:upToDate'))
       }
       if (state.status === 'error') {
-        useFileStore.getState().showToast('warning', t('update.error'), state.error ?? undefined)
+        useFileStore.getState().showToast('warning', t('update:error'), state.error ?? undefined)
       }
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast(described.kind, t('update.error'), described.detail)
+      useFileStore.getState().showToast(described.kind, t('update:error'), described.detail)
     }
   }, [setUpdate, t])
 
@@ -56,7 +56,7 @@ export function useUpdate(): UpdateApi {
       setUpdate(state)
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast(described.kind, t('update.error'), described.detail)
+      useFileStore.getState().showToast(described.kind, t('update:error'), described.detail)
     }
   }, [setUpdate, t])
 
@@ -65,7 +65,7 @@ export function useUpdate(): UpdateApi {
       await window.docflow.update.install()
     } catch (error) {
       const described = describeError(error)
-      useFileStore.getState().showToast(described.kind, t('update.error'), described.detail)
+      useFileStore.getState().showToast(described.kind, t('update:error'), described.detail)
     }
   }, [t])
 

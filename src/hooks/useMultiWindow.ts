@@ -23,14 +23,14 @@ export function useMultiWindow(): MultiWindowApi {
       try {
         await window.docflow.window.detachTab({ sourceWindowId: store.windowId, tab: snapshot })
         useTabStore.getState().closeTab(tabId)
-        useFileStore.getState().showToast('success', t('tabs.detached'), tab.displayName)
+        useFileStore.getState().showToast('success', t('tabs:detached'), tab.displayName)
         return true
       } catch (error) {
         const described = describeError(error)
         if (described.message.includes('MAX_WINDOWS') || described.detail?.includes('MAX_WINDOWS')) {
           useFileStore
             .getState()
-            .showToast('warning', t('tabs.maxWindowsReached'), t('tabs.maxWindowsDetail'))
+            .showToast('warning', t('tabs:maxWindowsReached'), t('tabs:maxWindowsDetail'))
         } else {
           useFileStore.getState().showToast(described.kind, described.message, described.detail)
         }
@@ -50,8 +50,8 @@ export function useMultiWindow(): MultiWindowApi {
         .getState()
         .showToast(
           described.message.includes('MAX_WINDOWS') ? 'warning' : described.kind,
-          described.message.includes('MAX_WINDOWS') ? t('tabs.maxWindowsReached') : described.message,
-          described.message.includes('MAX_WINDOWS') ? t('tabs.maxWindowsDetail') : described.detail
+          described.message.includes('MAX_WINDOWS') ? t('tabs:maxWindowsReached') : described.message,
+          described.message.includes('MAX_WINDOWS') ? t('tabs:maxWindowsDetail') : described.detail
         )
       return false
     }

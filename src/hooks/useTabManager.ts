@@ -101,7 +101,7 @@ export function useTabManager(): TabManagerApi {
             if (opened.reason === 'max') {
               useFileStore
                 .getState()
-                .showToast('warning', t('tabs.maxTabsReached'), t('tabs.maxTabsDetail'))
+                .showToast('warning', t('tabs:maxTabsReached'), t('tabs:maxTabsDetail'))
             }
             if (opened.id) useTabStore.getState().activateTab(opened.id)
             return opened.ok
@@ -109,7 +109,7 @@ export function useTabManager(): TabManagerApi {
           if (opened.id) useTabStore.getState().activateTab(opened.id)
         }
         await addRecent(result)
-        useFileStore.getState().showToast('success', `${t('common.open')} ${result.name}`, result.path)
+        useFileStore.getState().showToast('success', `${t('open')} ${result.name}`, result.path)
         return true
       } catch (error) {
         toastError(error)
@@ -131,7 +131,7 @@ export function useTabManager(): TabManagerApi {
       const opened = useTabStore.getState().openTab(result)
       if (!opened.ok) {
         if (opened.reason === 'max') {
-          useFileStore.getState().showToast('warning', t('tabs.maxTabsReached'), t('tabs.maxTabsDetail'))
+          useFileStore.getState().showToast('warning', t('tabs:maxTabsReached'), t('tabs:maxTabsDetail'))
         }
         return false
       }
@@ -147,7 +147,7 @@ export function useTabManager(): TabManagerApi {
   const newTab = useCallback(async (): Promise<boolean> => {
     const created = useTabStore.getState().newTab('')
     if (!created.ok) {
-      useFileStore.getState().showToast('warning', t('tabs.maxTabsReached'), t('tabs.maxTabsDetail'))
+      useFileStore.getState().showToast('warning', t('tabs:maxTabsReached'), t('tabs:maxTabsDetail'))
       return false
     }
     return true
@@ -169,7 +169,7 @@ export function useTabManager(): TabManagerApi {
           if (result.conflict) {
             useTabStore.getState().activateTab(tab.id)
             useTabStore.getState().setConflict(tab.id, { diskMtime: result.diskMtime ?? 0 })
-            useFileStore.getState().showToast('warning', t('errors.conflict'), t('errors.conflictDetail'))
+            useFileStore.getState().showToast('warning', t('errors:conflict'), t('errors:conflictDetail'))
             return false
           }
           if (!result.ok || !result.path || result.mtime === undefined) {
@@ -185,7 +185,7 @@ export function useTabManager(): TabManagerApi {
             encoding: tab.encoding,
             lineEnding: tab.lineEnding
           })
-          useFileStore.getState().showToast('success', t('common.saved'), result.path)
+          useFileStore.getState().showToast('success', t('saved'), result.path)
           return true
         }
 
@@ -212,7 +212,7 @@ export function useTabManager(): TabManagerApi {
           encoding: tab.encoding,
           lineEnding: tab.lineEnding
         })
-        useFileStore.getState().showToast('success', t('common.saved'), result.path)
+        useFileStore.getState().showToast('success', t('saved'), result.path)
         return true
       } catch (error) {
         toastError(error)
@@ -254,9 +254,9 @@ export function useTabManager(): TabManagerApi {
       if (tab.isPinned) {
         const response = await window.docflow.dialog.message({
           type: 'question',
-          title: t('tabs.pinnedTitle'),
-          message: t('tabs.pinnedMessage', { name: tab.displayName }),
-          buttons: [t('tabs.unpinAndClose'), t('common.cancel')],
+          title: t('tabs:pinnedTitle'),
+          message: t('tabs:pinnedMessage', { name: tab.displayName }),
+          buttons: [t('tabs:unpinAndClose'), t('cancel')],
           defaultId: 0,
           cancelId: 1
         })
@@ -388,7 +388,7 @@ export function useTabManager(): TabManagerApi {
           encoding: tab.encoding,
           lineEnding: tab.lineEnding
         })
-        useFileStore.getState().showToast('success', t('common.saved'), result.path)
+        useFileStore.getState().showToast('success', t('saved'), result.path)
       } catch (error) {
         toastError(error)
       }
