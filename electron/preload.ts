@@ -31,6 +31,8 @@ const api: DocFlowApi = {
     showItemInFolder: (path: string): Promise<{ ok: boolean }> =>
       ipcRenderer.invoke('app:showItemInFolder', { path }),
     quit: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('app:quit'),
+    showContextMenu: (type: 'editor' | 'preview'): Promise<{ ok: boolean }> =>
+      ipcRenderer.invoke('app:showContextMenu', { type }),
     onAction: (callback: (action: MenuAction) => void) => subscribe<MenuAction>('app:action', callback),
     onOpenFile: (callback: (payload: { path: string }) => void) =>
       subscribe<{ path: string }>('app:open-file', callback),

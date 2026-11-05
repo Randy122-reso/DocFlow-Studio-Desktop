@@ -3,6 +3,7 @@ import type { DocumentSettings } from '../types/document'
 import { copyText } from '../utils/clipboard'
 import { useFileStore } from '../store/fileStore'
 import { describeError } from '../utils/errors'
+import { useContextMenu } from '../hooks/useContextMenu'
 
 interface DocumentViewerProps {
   html: string
@@ -17,6 +18,8 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(fu
   { html, title, settings, zen = false, zoomLevel = 100, isPagedMode = true },
   ref
 ) {
+  const { handleContextMenu } = useContextMenu()
+
   const handleClick = async (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement
     const copyButton = target.closest<HTMLButtonElement>('[data-copy-code]')
@@ -58,7 +61,10 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(fu
   })
 
   return (
-    <section className={`preview-pane ${zen ? 'zen-preview' : ''}`}>
+    <section
+      className={`preview-pane ${zen ? 'zen-preview' : ''}`}
+      onContextMenu={(e) => handleContextMenu(e, 'preview')}
+    >
       <div className="preview-stage">
         <article
           ref={ref}

@@ -69,7 +69,32 @@ export default function App() {
   const encoding = useFileStore((state) => state.encoding)
   const lineEnding = useFileStore((state) => state.lineEnding)
 
-  const [tocOpen, setTocOpen] = useState(true)
+  const uiState = useUIStore()
+
+  // Sync viewMode between fileStore and uiStore for persistence
+  useEffect(() => {
+    const unsubFile = useFileStore.subscribe((state, prev) => {
+      if (state.viewMode !== prev.viewMode) {
+        useUIStore.getState().setUIState({ viewMode: state.viewMode })
+      }
+    })
+    const unsubUI = useUIStore.subscribe((state, prev) => {
+      if (state.viewMode !== prev.viewMode && state.viewMode !== useFileStore.getState().viewMode) {
+        useFileStore.getState().setViewMode(state.viewMode)
+      }
+    })
+    // Initialize from settings if different
+    const savedMode = useUIStore.getState().viewMode
+    if (savedMode && savedMode !== useFileStore.getState().viewMode) {
+      useFileStore.getState().setViewMode(savedMode)
+    }
+    return () => {
+      unsubFile()
+      unsubUI()
+    }
+  }, [])
+
+  const deferredContent = useDeferredValue(content)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [zenOpen, setZenOpen] = useState(false)
@@ -83,8 +108,6 @@ export default function App() {
 
   const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
 
-  const uiState = useUIStore()
-  const deferredContent = useDeferredValue(content)
   const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
   const stats = useMemo(() => computeDocumentStats(content), [content])
   const codeBlocks = useMemo(() => extractCodeBlocks(content), [content])
@@ -182,7 +205,7 @@ export default function App() {
           setShortcutsOpen(true)
           break
         case 'toggleToc':
-          setTocOpen((value) => !value)
+          useUIStore.getState().setUIState({ isTocVisible: !useUIStore.getState().isTocVisible })
           break
         case 'find':
           focusEditor()
@@ -314,7 +337,7 @@ export default function App() {
         onZen={() => setZenOpen(true)}
         onCode={() => setCodeOpen(true)}
         onSettings={() => setSettingsOpen(true)}
-        onToggleToc={() => setTocOpen((value) => !value)}
+        onToggleToc={() => useUIStore.getState().setUIState({ isTocVisible: !useUIStore.getState().isTocVisible })}
         onOpenRecent={(path) => void sessionRef.current.openPath(path)}
         onPinRecent={(path) => void sessionRef.current.togglePin(path)}
         onRemoveRecent={(path) => void sessionRef.current.removeRecent(path)}
@@ -329,7 +352,7 @@ export default function App() {
       />
 
       <div className="workspace">
-        {tocOpen && (
+        {uiState.isTocVisible && (
           <TableOfContents
             headings={parsed.headings}
             stats={stats}

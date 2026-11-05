@@ -70,7 +70,11 @@ export function useSettingsSync(): void {
       if (state.syncScrollWithToc === previous.syncScrollWithToc &&
           state.zoomLevel === previous.zoomLevel &&
           state.isPagedMode === previous.isPagedMode &&
-          state.autoScroll === previous.autoScroll) return
+          state.autoScroll === previous.autoScroll &&
+          state.viewMode === previous.viewMode &&
+          state.isTocVisible === previous.isTocVisible &&
+          state.tocWidth === previous.tocWidth &&
+          state.toolbarScrollLeft === previous.toolbarScrollLeft) return
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         timer = null

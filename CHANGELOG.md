@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.5.0] — 2026-11-03
+
+Full v1.5 release: native context menu, toolbar overflow scroll, full UI state persistence (viewMode, TOC visibility/width, toolbar scroll), React hooks discipline audit, and complete desktop integration.
+
+### Added
+
+- **Native Context Menu** (`electron/services/ContextMenuService`, `src/hooks/useContextMenu`): right-click in Editor and Preview triggers OS-native Electron `Menu` with Cut/Copy/Paste/Select All (editor) or Copy/Select All (preview).
+- **Toolbar Overflow Scroll**: `.formatting-toolbar` uses `overflow-x: auto` with gradient `mask-image` so buttons never get cut on narrow windows.
+- **Full UI State Persistence** (`uiStore`, `SettingsService`): `viewMode`, `isTocVisible`, `tocWidth`, and `toolbarScrollLeft` saved to `settings.json` with 500ms debounce; restored on boot.
+- **Hooks Discipline (X1)**: `useUIStore()` at top-level in `App.tsx`, `TableOfContents.tsx`; `useContextMenu()` at top-level in `DocumentEditor.tsx`, `DocumentViewer.tsx`; regression test `tests/unit/hooks-discipline.test.tsx` added; ESLint `react-hooks/rules-of-hooks: error` enforced.
+- **Settings schema v2**: `UIState` interface extended with optional persistence fields (`electron/types/ipc.ts`, `electron/services/SettingsService.ts`).
+- **IPCN `app:showContextMenu`**: validated via preload `window.docflow.app.showContextMenu(type)`.
+
+### Changed
+
+- `package.json` version updated to `1.5.0`.
+- `README.md` updated to v1.5 with native context menu, toolbar overflow, full persistence, and hooks discipline documentation.
+- Badge/status updated to `1.5.0`.
+
+### Tests
+
+- All 58 existing unit tests pass (`vitest run`).
+- `npm run typecheck` clean across `tsconfig.json` and `tsconfig.node.json`.
+
+---
+
 ## [1.0.0] — 2026-11-03
 
 Beta release implementing the complete v1 design: native UI synchronization, toolbar redesign, and persistent UI state.
@@ -31,6 +57,7 @@ Beta release implementing the complete v1 design: native UI synchronization, too
 
 [0.1.0]: https://github.com/docflow/studio-desktop/releases/tag/v0.1.0
 [1.0.0]: https://github.com/docflow/studio-desktop/releases/tag/v1.0.0
+[1.5.0]: https://github.com/docflow/studio-desktop/releases/tag/v1.5.0
 
 ---
 

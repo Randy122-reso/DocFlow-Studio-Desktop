@@ -14,7 +14,7 @@ interface TableOfContentsProps {
 export function TableOfContents({ headings, stats, theme, onSelect }: TableOfContentsProps) {
   const ui = useUIStore()
   return (
-    <aside className="toc-sidebar">
+    <aside className="toc-sidebar" style={{ width: ui.tocWidth, flexShrink: 0 }}>
       <div className="toc-head">
         <span>Outline</span>
         <span className="toc-count">{headings.length}</span>

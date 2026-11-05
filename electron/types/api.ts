@@ -32,6 +32,7 @@ export interface DocFlowApi {
     openExternal(url: string): Promise<{ ok: boolean }>
     showItemInFolder(path: string): Promise<{ ok: boolean }>
     quit(): Promise<{ ok: boolean }>
+    showContextMenu(type: 'editor' | 'preview'): Promise<{ ok: boolean }>
     onAction(callback: (action: MenuAction) => void): () => void
     onOpenFile(callback: (payload: { path: string }) => void): () => void
     onReady(callback: (payload: { version: string; platform: string }) => void): () => void

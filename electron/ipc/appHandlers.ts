@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, BrowserWindow, Menu } from 'electron'
 import type { Logger } from '../utils/logger'
 import type { OpenFileRouter } from '../services/OpenFileRouter'
 import type { DialogService } from '../services/DialogService'
@@ -35,6 +35,23 @@ export function registerAppHandlers(deps: AppHandlerDeps): void {
 
   registerHandler('app:quit', null, deps.logger, async () => {
     app.quit()
+    return { ok: true }
+  })
+
+  registerHandler('app:showContextMenu', null, deps.logger, async (payload: unknown) => {
+    const type = (payload as { type?: string })?.type
+    const isEditor = type === 'editor'
+    const template: import('electron').MenuItemConstructorOptions[] = [
+      { label: 'Cut', role: 'cut', enabled: isEditor },
+      { label: 'Copy', role: 'copy' },
+      { label: 'Paste', role: 'paste', enabled: isEditor },
+      { type: 'separator' },
+      { label: 'Select All', role: 'selectAll' }
+    ]
+    const menu = Menu.buildFromTemplate(template)
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) menu.popup({ window: win })
+    else menu.popup()
     return { ok: true }
   })
 }

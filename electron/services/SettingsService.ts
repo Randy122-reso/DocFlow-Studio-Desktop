@@ -28,7 +28,11 @@ export const settingsSchema = z.object({
     zoomLevel: z.number().int().min(50).max(200),
     isPagedMode: z.boolean(),
     autoScroll: z.boolean(),
-    syncScrollWithToc: z.boolean()
+    syncScrollWithToc: z.boolean(),
+    viewMode: z.enum(['editor', 'split', 'preview']).optional(),
+    isTocVisible: z.boolean().optional(),
+    tocWidth: z.number().int().min(120).max(600).optional(),
+    toolbarScrollLeft: z.number().int().min(0).optional()
   })
 })
 
@@ -51,7 +55,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     zoomLevel: 100,
     isPagedMode: true,
     autoScroll: false,
-    syncScrollWithToc: true
+    syncScrollWithToc: true,
+    viewMode: 'split',
+    isTocVisible: true,
+    tocWidth: 240,
+    toolbarScrollLeft: 0
   }
 }
 

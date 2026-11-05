@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Bold, Italic, Strikethrough, Code, SquareCode, Link2, Image, List, ListChecks, ListOrdered,
   Minus, Heading1, Heading2, Heading3, Quote, Table2, Columns2, Eye, Copy, Check,
@@ -42,6 +42,14 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
   const ui = useUIStore()
   const [copied, setCopied] = useState(false)
   const content = useFileStore((s) => s.content)
+  const toolbarRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (toolbarRef.current) {
+      const target = ui.toolbarScrollLeft
+      if (toolbarRef.current.scrollLeft !== target) toolbarRef.current.scrollLeft = target
+    }
+  }, [ui.toolbarScrollLeft])
 
   const handleCopyMD = useCallback(async () => {
     const ok = await copyText(content)
@@ -52,7 +60,15 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
   }, [content])
 
   return (
-    <div className="formatting-toolbar">
+    <div
+      className="formatting-toolbar"
+      onScroll={(e) => {
+        const left = e.currentTarget.scrollLeft
+        const current = useUIStore.getState().toolbarScrollLeft
+        if (left !== current) useUIStore.getState().setUIState({ toolbarScrollLeft: left })
+      }}
+      ref={toolbarRef}
+    >
       {/* Format group */}
       <div className="format-group" aria-label="Formatting">
         {FORMAT_BUTTONS.map((button) => {

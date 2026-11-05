@@ -5,7 +5,11 @@ const DEFAULT_UI_STATE: UIState = {
   zoomLevel: 100,
   isPagedMode: true,
   autoScroll: false,
-  syncScrollWithToc: true
+  syncScrollWithToc: true,
+  viewMode: 'split',
+  isTocVisible: true,
+  tocWidth: 240,
+  toolbarScrollLeft: 0
 }
 
 interface UIStore extends UIState {
@@ -31,7 +35,11 @@ export const useUIStore = create<UIStore>((set, get) => ({
       zoomLevel: typeof patch.zoomLevel === 'number' ? patch.zoomLevel : s.zoomLevel,
       isPagedMode: typeof patch.isPagedMode === 'boolean' ? patch.isPagedMode : s.isPagedMode,
       autoScroll: typeof patch.autoScroll === 'boolean' ? patch.autoScroll : s.autoScroll,
-      syncScrollWithToc: typeof patch.syncScrollWithToc === 'boolean' ? patch.syncScrollWithToc : s.syncScrollWithToc
+      syncScrollWithToc: typeof patch.syncScrollWithToc === 'boolean' ? patch.syncScrollWithToc : s.syncScrollWithToc,
+      viewMode: (patch.viewMode as UIState['viewMode']) || s.viewMode,
+      isTocVisible: typeof patch.isTocVisible === 'boolean' ? patch.isTocVisible : s.isTocVisible,
+      tocWidth: typeof patch.tocWidth === 'number' ? patch.tocWidth : s.tocWidth,
+      toolbarScrollLeft: typeof patch.toolbarScrollLeft === 'number' ? patch.toolbarScrollLeft : s.toolbarScrollLeft
     }))
   }
 }))

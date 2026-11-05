@@ -61,6 +61,10 @@ export interface UIState {
   isPagedMode: boolean
   autoScroll: boolean
   syncScrollWithToc: boolean
+  viewMode?: 'editor' | 'split' | 'preview'
+  isTocVisible?: boolean
+  tocWidth?: number
+  toolbarScrollLeft?: number
 }
 
 export interface WindowBounds {

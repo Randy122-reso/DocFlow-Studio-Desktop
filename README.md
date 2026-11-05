@@ -6,7 +6,9 @@ DocFlow Studio Desktop adalah aplikasi desktop untuk menulis dokumen Markdown de
 langsung, mengatur tata letak halaman, dan mengekspor ke DOCX, PDF, DOC, HTML, atau Markdown.
 Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim ke jaringan.
 
-![Status](https://img.shields.io/badge/status-1.0.0%20beta-10b981)
+> **v1.5.0** — Native Context Menu, Toolbar Overflow Scroll, Full UI Persistence (viewMode, TOC width/visibility, toolbar scroll), React Hooks Discipline, dan integrasi desktop lengkap.
+
+![Status](https://img.shields.io/badge/status-1.5.0%20stable-10b981)
 ![Electron](https://img.shields.io/badge/Electron-33-2b2b2b)
 ![React](https://img.shields.io/badge/React-19-087ea4)
 ![License](https://img.shields.io/badge/license-MIT-2f855a)

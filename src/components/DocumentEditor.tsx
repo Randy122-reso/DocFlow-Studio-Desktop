@@ -1,4 +1,5 @@
 import { forwardRef, type KeyboardEvent } from 'react'
+import { useContextMenu } from '../hooks/useContextMenu'
 import type { FontFamily, FontSize } from '../../electron/types/ipc'
 
 interface DocumentEditorProps {
@@ -13,6 +14,8 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
   { value, onChange, onCursorChange, fontSize, fontFamily },
   ref
 ) {
+  const { handleContextMenu } = useContextMenu()
+
   const updateCursor = (element: HTMLTextAreaElement) => {
     const before = element.value.slice(0, element.selectionStart)
     const lines = before.split('\n')
@@ -50,6 +53,7 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
         onKeyUp={(event) => updateCursor(event.currentTarget)}
         onClick={(event) => updateCursor(event.currentTarget)}
         onKeyDown={handleKeyDown}
+        onContextMenu={(e) => handleContextMenu(e, 'editor')}
         spellCheck
         placeholder="Start writing Markdown…"
         aria-label="Markdown editor"
