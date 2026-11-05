@@ -1,16 +1,27 @@
 import type {
   AppSettings,
   BinarySaveResult,
+  ContextMenuRequest,
   DirtyState,
   ExternalChangeEvent,
   FileFilter,
   FilePayload,
+  FindInFilesInput,
+  FindInFilesResponse,
+  FindOptions,
+  Locale,
   MenuAction,
   OpenResult,
   RecentFile,
+  ReplaceInFilesResponse,
   SaveResult,
-  SessionDraft,
+  SessionState,
+  SessionWindow,
+  TabSnapshot,
   UnsavedChoice,
+  UpdateState,
+  WindowBounds,
+  WindowInfo,
   WindowState
 } from './ipc'
 
@@ -24,6 +35,11 @@ export interface SaveAsResult {
   diskMtime?: number
 }
 
+export interface LocalePayload {
+  preference: Locale
+  locale: 'en' | 'id'
+}
+
 export interface DocFlowApi {
   app: {
     version(): Promise<string>
@@ -32,10 +48,11 @@ export interface DocFlowApi {
     openExternal(url: string): Promise<{ ok: boolean }>
     showItemInFolder(path: string): Promise<{ ok: boolean }>
     quit(): Promise<{ ok: boolean }>
-    showContextMenu(type: 'editor' | 'preview'): Promise<{ ok: boolean }>
+    showContextMenu(request: ContextMenuRequest): Promise<{ ok: boolean }>
     onAction(callback: (action: MenuAction) => void): () => void
     onOpenFile(callback: (payload: { path: string }) => void): () => void
     onReady(callback: (payload: { version: string; platform: string }) => void): () => void
+    onTabAction(callback: (payload: { action: string; tabId: string }) => void): () => void
   }
   file: {
     openDialog(): Promise<OpenResult>
@@ -49,6 +66,7 @@ export interface DocFlowApi {
     }): Promise<SaveResult>
     saveAs(input: { content: string; defaultName: string; filters?: FileFilter[] }): Promise<SaveAsResult>
     saveDialog(input: { defaultName: string; filters?: FileFilter[] }): Promise<{ cancelled: boolean; path?: string }>
+    pickDirectory(): Promise<{ cancelled: boolean; path?: string }>
     info(path: string): Promise<{ path: string; size: number; mtime: number; isFile: boolean; isSymlink: boolean } | null>
     exists(path: string): Promise<boolean>
     readBinary(path: string): Promise<{ path?: string; dataBase64?: string; size?: number; mtime?: number; ok?: boolean; error?: string }>
@@ -76,10 +94,16 @@ export interface DocFlowApi {
     get(key: keyof AppSettings): Promise<unknown>
     set(patch: Partial<AppSettings>): Promise<AppSettings>
     reset(): Promise<AppSettings>
+    onChanged(callback: (settings: AppSettings) => void): () => void
   }
   session: {
-    save(draft: SessionDraft): Promise<{ ok: boolean }>
-    load(): Promise<SessionDraft | null>
+    save(input: {
+      window: SessionWindow
+      findHistory?: string[]
+      findOptions?: FindOptions
+      activeWindowId?: string | null
+    }): Promise<{ ok: boolean }>
+    load(): Promise<SessionState | null>
     clear(): Promise<{ ok: boolean }>
   }
   window: {
@@ -91,6 +115,11 @@ export interface DocFlowApi {
     close(): Promise<{ ok: boolean }>
     closeConfirmed(): Promise<{ ok: boolean }>
     state(): Promise<WindowState>
+    info(): Promise<WindowInfo>
+    count(): Promise<number>
+    newWindow(): Promise<{ ok: boolean; id: string }>
+    detachTab(input: { sourceWindowId: string; tab: TabSnapshot }): Promise<{ ok: boolean; id: string }>
+    onBoundsChanged(callback: (payload: { bounds: WindowBounds }) => void): () => void
   }
   dialog: {
     confirmUnsaved(fileName: string): Promise<UnsavedChoice>
@@ -103,6 +132,29 @@ export interface DocFlowApi {
       defaultId?: number
       cancelId?: number
     }): Promise<number>
+  }
+  find: {
+    inFiles(input: FindInFilesInput): Promise<FindInFilesResponse>
+    replaceInFiles(input: FindInFilesInput): Promise<ReplaceInFilesResponse>
+    cancel(): Promise<{ ok: boolean }>
+  }
+  update: {
+    status(): Promise<UpdateState>
+    check(): Promise<UpdateState>
+    download(): Promise<UpdateState>
+    install(): Promise<{ ok: boolean }>
+    cancel(): Promise<UpdateState>
+    onStatus(callback: (state: UpdateState) => void): () => void
+  }
+  i18n: {
+    getLocale(): Promise<LocalePayload>
+    setLocale(locale: Locale): Promise<LocalePayload>
+    onChanged(callback: (payload: LocalePayload) => void): () => void
+  }
+  tray: {
+    show(): Promise<{ ok: boolean }>
+    hide(): Promise<{ ok: boolean }>
+    setTooltip(text: string): Promise<{ ok: boolean }>
   }
 }
 

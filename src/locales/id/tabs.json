@@ -1,0 +1,23 @@
+{
+  "tabs": "Tab",
+  "close": "Tutup tab",
+  "closeOthers": "Tutup tab lain",
+  "closeRight": "Tutup tab di kanan",
+  "closeLeft": "Tutup tab di kiri",
+  "pin": "Sematkan tab",
+  "unpin": "Lepas sematan tab",
+  "detach": "Pindahkan ke jendela baru",
+  "newTab": "Tab baru",
+  "untitled": "Tanpa judul",
+  "maxTabsReached": "Jumlah tab maksimum tercapai",
+  "maxTabsDetail": "Tutup satu tab sebelum membuka tab lain.",
+  "maxWindowsReached": "Jumlah jendela maksimum tercapai",
+  "maxWindowsDetail": "Tutup satu jendela sebelum memindahkan tab lain.",
+  "pinnedTitle": "Tab tersemat",
+  "pinnedMessage": "\"{{name}}\" tersemat. Lepas sematan dan tutup?",
+  "unpinAndClose": "Lepas Sematan dan Tutup",
+  "detached": "Tab dipindahkan ke jendela baru",
+  "copyPath": "Salin path lengkap",
+  "reveal": "Tampilkan di folder",
+  "dirty": "Perubahan belum disimpan"
+}

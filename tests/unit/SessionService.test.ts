@@ -2,23 +2,48 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { SessionService } from '../../electron/services/SessionService'
-import type { SessionDraft } from '../../electron/types/ipc'
+import { DEFAULT_FIND_OPTIONS, SessionService } from '../../electron/services/SessionService'
+import type { SessionState, TabSnapshot, WindowBounds, SessionWindow } from '../../electron/types/ipc'
 
 let dir: string
 let file: string
 
-function draft(overrides: Partial<SessionDraft> = {}): SessionDraft {
+function tab(overrides: Partial<TabSnapshot> = {}): TabSnapshot {
   return {
-    filePath: null,
-    fileName: 'Untitled.md',
-    fileContent: '# Draft',
-    savedContent: '',
-    diskMtime: null,
+    id: 'tab-1',
+    filePath: join(dir, 'note.md'),
+    displayName: 'note.md',
+    fileContent: '# Note',
+    savedContent: '# Note',
+    diskMtime: 123,
     encoding: 'utf-8',
     lineEnding: 'lf',
-    dirty: true,
-    timestamp: 1_700_000_000_000,
+    isPinned: false,
+    editorScrollTop: 0,
+    previewScrollTop: 0,
+    cursorOffset: 0,
+    selectionEnd: 0,
+    ...overrides
+  }
+}
+
+function windowOf(tabs: TabSnapshot[], overrides: Partial<{ id: string; bounds: WindowBounds }> = {}): SessionWindow {
+  return {
+    id: 'window-1',
+    bounds: { width: 1400, height: 900, x: 10, y: 20 },
+    tabs,
+    activeTabId: tabs[0]?.id ?? null,
+    ...overrides
+  }
+}
+
+function session(tabs: TabSnapshot[], overrides: Partial<SessionState> = {}): SessionState {
+  return {
+    schemaVersion: 5,
+    windows: [windowOf(tabs)],
+    activeWindowId: 'window-1',
+    findHistory: ['TODO'],
+    findOptions: { ...DEFAULT_FIND_OPTIONS },
     ...overrides
   }
 }
@@ -35,42 +60,44 @@ afterEach(async () => {
 describe('SessionService', () => {
   it('returns null when no draft exists', async () => {
     const service = new SessionService(file)
-    expect(await service.read()).toBeNull()
+    expect(await service.readSession()).toBeNull()
   })
 
   it('round-trips a dirty draft', async () => {
     const service = new SessionService(file)
-    const input = draft({ filePath: join(dir, 'note.md'), diskMtime: 123 })
-    await service.write(input)
-    expect(await service.read()).toEqual(input)
+    const input = session([tab({ filePath: join(dir, 'note.md'), diskMtime: 123 })])
+    await service.writeSession(input)
+    expect(await service.readSession()).toEqual(input)
   })
 
   it('clears the draft when it is no longer dirty', async () => {
     const service = new SessionService(file)
-    await service.write(draft())
-    expect(await fs.readFile(file, 'utf8')).toContain('# Draft')
+    const untitled = tab({ filePath: null, displayName: 'Untitled.md', fileContent: 'hello', savedContent: '' })
+    await service.writeSession(session([untitled]))
+    expect(await service.readSession()).toEqual(session([untitled]))
+    expect(await fs.readFile(file, 'utf8')).toContain('hello')
 
-    await service.write(draft({ dirty: false }))
+    await service.writeSession(session([tab({ filePath: null, displayName: 'Untitled.md', fileContent: 'hello', savedContent: 'hello' })]))
     await expect(fs.access(file)).rejects.toThrow()
   })
 
   it('ignores malformed drafts', async () => {
     await fs.writeFile(file, '{"fileName":"Untitled.md"}')
     const service = new SessionService(file)
-    expect(await service.read()).toBeNull()
+    expect(await service.readSession()).toBeNull()
   })
 
   it('ignores invalid JSON', async () => {
     await fs.writeFile(file, '{oops')
     const service = new SessionService(file)
-    expect(await service.read()).toBeNull()
+    expect(await service.readSession()).toBeNull()
   })
 
   it('clear removes an existing file safely', async () => {
     const service = new SessionService(file)
-    await service.write(draft())
+    await service.writeSession(session([tab()]))
     await service.clear()
-    expect(await service.read()).toBeNull()
+    expect(await service.readSession()).toBeNull()
     await expect(service.clear()).resolves.toBeUndefined()
   })
 })

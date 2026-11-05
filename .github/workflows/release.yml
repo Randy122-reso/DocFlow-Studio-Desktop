@@ -63,8 +63,10 @@ jobs:
         with:
           name: release-ubuntu-22.04
           path: release/
+      - name: Generate update manifest
+        run: npm run gen:update-manifest
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release/*.exe
+          files: release/*
           generate_release_notes: true

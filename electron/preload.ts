@@ -1,19 +1,25 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { DocFlowApi } from './types/api'
+import type { DocFlowApi, LocalePayload } from './types/api'
 import type {
   AppSettings,
-  BinarySaveResult,
+  ContextMenuRequest,
   DirtyState,
   ExternalChangeEvent,
   FileFilter,
-  FilePayload,
+  FindInFilesInput,
   MenuAction,
   OpenResult,
   RecentFile,
   SaveResult,
-  SessionDraft,
+  SessionState,
+  SessionWindow,
+  TabSnapshot,
+  UpdateState,
   UnsavedChoice,
-  WindowState
+  WindowBounds,
+  WindowInfo,
+  WindowState,
+  FindOptions
 } from './types/ipc'
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -31,13 +37,15 @@ const api: DocFlowApi = {
     showItemInFolder: (path: string): Promise<{ ok: boolean }> =>
       ipcRenderer.invoke('app:showItemInFolder', { path }),
     quit: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('app:quit'),
-    showContextMenu: (type: 'editor' | 'preview'): Promise<{ ok: boolean }> =>
-      ipcRenderer.invoke('app:showContextMenu', { type }),
+    showContextMenu: (request: ContextMenuRequest): Promise<{ ok: boolean }> =>
+      ipcRenderer.invoke('app:showContextMenu', request),
     onAction: (callback: (action: MenuAction) => void) => subscribe<MenuAction>('app:action', callback),
     onOpenFile: (callback: (payload: { path: string }) => void) =>
       subscribe<{ path: string }>('app:open-file', callback),
     onReady: (callback: (payload: { version: string; platform: string }) => void) =>
-      subscribe<{ version: string; platform: string }>('app:ready', callback)
+      subscribe<{ version: string; platform: string }>('app:ready', callback),
+    onTabAction: (callback: (payload: { action: string; tabId: string }) => void) =>
+      subscribe<{ action: string; tabId: string }>('app:tab-action', callback)
   },
   file: {
     openDialog: (): Promise<OpenResult> => ipcRenderer.invoke('file:openDialog'),
@@ -53,12 +61,14 @@ const api: DocFlowApi = {
       content: string
       defaultName: string
       filters?: FileFilter[]
-    }): Promise<{ cancelled: boolean } & Partial<FilePayload> & { ok?: boolean }> =>
+    }): Promise<{ cancelled: boolean } & Partial<OpenResult> & { ok?: boolean }> =>
       ipcRenderer.invoke('file:saveAs', input),
     saveDialog: (input: {
       defaultName: string
       filters?: FileFilter[]
     }): Promise<{ cancelled: boolean; path?: string }> => ipcRenderer.invoke('file:saveDialog', input),
+    pickDirectory: (): Promise<{ cancelled: boolean; path?: string }> =>
+      ipcRenderer.invoke('file:pickDirectory'),
     info: (path: string): Promise<{ path: string; size: number; mtime: number; isFile: boolean; isSymlink: boolean } | null> =>
       ipcRenderer.invoke('file:info', { path }),
     exists: (path: string): Promise<boolean> => ipcRenderer.invoke('file:exists', { path }),
@@ -69,7 +79,8 @@ const api: DocFlowApi = {
       defaultName: string
       filters?: FileFilter[]
       path?: string
-    }): Promise<BinarySaveResult> => ipcRenderer.invoke('file:writeBinary', input),
+    }): Promise<{ ok: boolean; cancelled?: boolean; path?: string; size?: number }> =>
+      ipcRenderer.invoke('file:writeBinary', input),
     watch: (path: string): Promise<{ watching: boolean; path: string }> =>
       ipcRenderer.invoke('file:watch', { path }),
     unwatch: (path: string): Promise<{ watching: boolean; path: string }> =>
@@ -91,11 +102,18 @@ const api: DocFlowApi = {
     all: (): Promise<AppSettings> => ipcRenderer.invoke('settings:all'),
     get: (key: keyof AppSettings): Promise<unknown> => ipcRenderer.invoke('settings:get', { key }),
     set: (patch: Partial<AppSettings>): Promise<AppSettings> => ipcRenderer.invoke('settings:set', patch),
-    reset: (): Promise<AppSettings> => ipcRenderer.invoke('settings:reset')
+    reset: (): Promise<AppSettings> => ipcRenderer.invoke('settings:reset'),
+    onChanged: (callback: (settings: AppSettings) => void) =>
+      subscribe<AppSettings>('settings:changed', callback)
   },
   session: {
-    save: (draft: SessionDraft): Promise<{ ok: boolean }> => ipcRenderer.invoke('session:save', draft),
-    load: (): Promise<SessionDraft | null> => ipcRenderer.invoke('session:load'),
+    save: (input: {
+      window: SessionWindow
+      findHistory?: string[]
+      findOptions?: FindOptions
+      activeWindowId?: string | null
+    }): Promise<{ ok: boolean }> => ipcRenderer.invoke('session:save', input),
+    load: (): Promise<SessionState | null> => ipcRenderer.invoke('session:load'),
     clear: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('session:clear')
   },
   window: {
@@ -106,7 +124,14 @@ const api: DocFlowApi = {
     isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:isMaximized'),
     close: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('window:close'),
     closeConfirmed: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('window:closeConfirmed'),
-    state: (): Promise<WindowState> => ipcRenderer.invoke('window:state')
+    state: (): Promise<WindowState> => ipcRenderer.invoke('window:state'),
+    info: (): Promise<WindowInfo> => ipcRenderer.invoke('window:info'),
+    count: (): Promise<number> => ipcRenderer.invoke('window:count'),
+    newWindow: (): Promise<{ ok: boolean; id: string }> => ipcRenderer.invoke('window:newWindow'),
+    detachTab: (input: { sourceWindowId: string; tab: TabSnapshot }): Promise<{ ok: boolean; id: string }> =>
+      ipcRenderer.invoke('window:detachTab', input),
+    onBoundsChanged: (callback: (payload: { bounds: WindowBounds }) => void) =>
+      subscribe<{ bounds: WindowBounds }>('window:bounds-changed', callback)
   },
   dialog: {
     confirmUnsaved: (fileName: string): Promise<UnsavedChoice> =>
@@ -120,6 +145,30 @@ const api: DocFlowApi = {
       defaultId?: number
       cancelId?: number
     }): Promise<number> => ipcRenderer.invoke('dialog:message', input)
+  },
+  find: {
+    inFiles: (input: FindInFilesInput) => ipcRenderer.invoke('find:inFiles', input),
+    replaceInFiles: (input: FindInFilesInput) => ipcRenderer.invoke('find:replaceInFiles', input),
+    cancel: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('find:cancel')
+  },
+  update: {
+    status: (): Promise<UpdateState> => ipcRenderer.invoke('update:status'),
+    check: (): Promise<UpdateState> => ipcRenderer.invoke('update:check'),
+    download: (): Promise<UpdateState> => ipcRenderer.invoke('update:download'),
+    install: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('update:install'),
+    cancel: (): Promise<UpdateState> => ipcRenderer.invoke('update:cancel'),
+    onStatus: (callback: (state: UpdateState) => void) => subscribe<UpdateState>('update:status', callback)
+  },
+  i18n: {
+    getLocale: (): Promise<LocalePayload> => ipcRenderer.invoke('i18n:getLocale'),
+    setLocale: (locale) => ipcRenderer.invoke('i18n:setLocale', { locale }),
+    onChanged: (callback: (payload: LocalePayload) => void) =>
+      subscribe<LocalePayload>('i18n:localeChanged', callback)
+  },
+  tray: {
+    show: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('tray:show'),
+    hide: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('tray:hide'),
+    setTooltip: (text: string): Promise<{ ok: boolean }> => ipcRenderer.invoke('tray:setTooltip', { text })
   }
 }
 

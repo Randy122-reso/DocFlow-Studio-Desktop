@@ -1,0 +1,18 @@
+{
+  "generic": "Something went wrong",
+  "readFailed": "The file could not be read",
+  "writeFailed": "The file could not be written",
+  "invalidPath": "That path is not allowed",
+  "ipcInvalid": "The application sent an invalid request",
+  "conflict": "The file changed on disk",
+  "conflictDetail": "Choose how to resolve the conflict.",
+  "reload": "Reload",
+  "overwrite": "Overwrite",
+  "saveAs": "Save As",
+  "externalChange": "An external change was detected",
+  "recoveryTitle": "Unsaved draft found",
+  "recoveryDetail": "A previous session did not close cleanly.",
+  "restore": "Restore",
+  "discard": "Discard",
+  "openOriginal": "Open Original"
+}

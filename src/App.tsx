@@ -1,20 +1,31 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, RefreshCw, X } from 'lucide-react'
-import type { RecoveryState } from './types/document'
 import type { FormatAction } from './utils/editorActions'
 import { applyFormatting } from './utils/editorActions'
 import { parseMarkdown, extractCodeBlocks } from './utils/markdownParser'
 import { computeDocumentStats } from './utils/documentStats'
 import { useFileStore } from './store/fileStore'
-import { useFileSession } from './hooks/useFileSession'
+import { useTabStore } from './store/tabStore'
+import { useSearchStore } from './store/searchStore'
+import { useUIStore } from './store/uiStore'
 import { useRecentFiles } from './hooks/useRecentFiles'
 import { useSettingsSync } from './hooks/useSettingsSync'
 import { useWindowTitle } from './hooks/useWindowTitle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useScrollSync } from './hooks/useScrollSync'
-import { useUIStore } from './store/uiStore'
+import { useTabManager } from './hooks/useTabManager'
+import { useTabPersistence } from './hooks/useTabPersistence'
+import { useMultiWindow } from './hooks/useMultiWindow'
+import { useUpdate } from './hooks/useUpdate'
+import { useI18n } from './hooks/useI18n'
+import { useFindReplace } from './hooks/useFindReplace'
 import { TopNav } from './components/TopNav'
+import { TabBar } from './components/TabBar'
+import { UpdateBanner } from './components/UpdateBanner'
 import { FormattingToolbar } from './components/FormattingToolbar'
+import { FindReplaceBar } from './components/FindReplaceBar'
+import { FindResultsPanel } from './components/FindResultsPanel'
+import { FindInFilesPanel } from './components/FindInFilesPanel'
 import { DocumentEditor } from './components/DocumentEditor'
 import { DocumentViewer } from './components/DocumentViewer'
 import { TableOfContents } from './components/TableOfContents'
@@ -23,76 +34,43 @@ import { DocumentSettingsPanel } from './components/DocumentSettingsPanel'
 import { ExportModal } from './components/ExportModal'
 import { ZenReviewModal } from './components/ZenReviewModal'
 import { CodeScriptModal } from './components/CodeScriptModal'
-import { RecoveryPrompt } from './components/RecoveryPrompt'
 import { ConflictDialog } from './components/ConflictDialog'
 import { ShortcutHelpModal } from './components/ShortcutHelpModal'
 import { Toast } from './components/Toast'
 
-function toRecovery(draft: {
-  filePath: string | null
-  fileName: string
-  fileContent: string
-  savedContent: string
-  diskMtime: number | null
-  timestamp: number
-}): RecoveryState {
-  return {
-    filePath: draft.filePath,
-    fileName: draft.fileName,
-    fileContent: draft.fileContent,
-    savedContent: draft.savedContent,
-    diskMtime: draft.diskMtime,
-    timestamp: draft.timestamp
-  }
+function cursorFromOffset(content: string, offset: number): { line: number; column: number } {
+  const before = content.slice(0, Math.max(0, Math.min(offset, content.length)))
+  const lines = before.split('\n')
+  return { line: lines.length, column: (lines[lines.length - 1]?.length ?? 0) + 1 }
 }
 
 export default function App() {
-  const session = useFileSession()
-  const sessionRef = useRef(session)
-  sessionRef.current = session
+  const tabs = useTabStore((state) => state.tabs)
+  const activeTabId = useTabStore((state) => state.activeTabId)
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null
+  const content = activeTab?.fileContent ?? ''
+  const fileName = activeTab?.displayName ?? 'Welcome.md'
+  const filePath = activeTab?.filePath ?? null
+  const dirty = activeTab ? activeTab.fileContent !== activeTab.savedContent : false
 
+  const settings = useFileStore((state) => state.settings)
+  const setViewMode = useUIStore((state) => state.setUIState)
+  const viewMode = useUIStore((state) => state.viewMode)
+  const uiState = useUIStore()
+
+  useTabPersistence()
+  const manager = useTabManager()
+  const multiWindow = useMultiWindow()
+  const { t } = useI18n()
+  useUpdate()
   useRecentFiles()
   useSettingsSync()
   useWindowTitle()
 
-  const content = useFileStore((state) => state.content)
-  const fileName = useFileStore((state) => state.fileName)
-  const filePath = useFileStore((state) => state.filePath)
-  const settings = useFileStore((state) => state.settings)
-  const viewMode = useFileStore((state) => state.viewMode)
-  const setViewMode = useFileStore((state) => state.setViewMode)
-  const setContent = useFileStore((state) => state.setContent)
-  const recovery = useFileStore((state) => state.recovery)
-  const conflict = useFileStore((state) => state.conflict)
-  const externalChange = useFileStore((state) => state.externalChange)
-  const dirty = useFileStore((state) => state.content !== state.savedContent)
-  const encoding = useFileStore((state) => state.encoding)
-  const lineEnding = useFileStore((state) => state.lineEnding)
-
-  const uiState = useUIStore()
-
-  // Sync viewMode between fileStore and uiStore for persistence
-  useEffect(() => {
-    const unsubFile = useFileStore.subscribe((state, prev) => {
-      if (state.viewMode !== prev.viewMode) {
-        useUIStore.getState().setUIState({ viewMode: state.viewMode })
-      }
-    })
-    const unsubUI = useUIStore.subscribe((state, prev) => {
-      if (state.viewMode !== prev.viewMode && state.viewMode !== useFileStore.getState().viewMode) {
-        useFileStore.getState().setViewMode(state.viewMode)
-      }
-    })
-    // Initialize from settings if different
-    const savedMode = useUIStore.getState().viewMode
-    if (savedMode && savedMode !== useFileStore.getState().viewMode) {
-      useFileStore.getState().setViewMode(savedMode)
-    }
-    return () => {
-      unsubFile()
-      unsubUI()
-    }
-  }, [])
+  const managerRef = useRef(manager)
+  managerRef.current = manager
+  const multiWindowRef = useRef(multiWindow)
+  multiWindowRef.current = multiWindow
 
   const deferredContent = useDeferredValue(content)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -101,57 +79,55 @@ export default function App() {
   const [codeOpen, setCodeOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [windowCount, setWindowCount] = useState(1)
   const [cursor, setCursor] = useState({ line: 1, column: 1, selection: 0 })
 
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
+  const { findNext, findPrevious } = useFindReplace(editorRef)
 
   const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
   const stats = useMemo(() => computeDocumentStats(content), [content])
   const codeBlocks = useMemo(() => extractCodeBlocks(content), [content])
 
-  useEffect(() => {
-    let cancelled = false
+  const setContent = useCallback((value: string) => {
+    const id = useTabStore.getState().activeTabId
+    if (id) useTabStore.getState().setBuffer(id, value)
+  }, [])
 
-    const boot = async () => {
-      try {
-        const launch = await window.docflow.app.consumeLaunchFile()
-        if (launch && !cancelled) {
-          const opened = await sessionRef.current.openPath(launch.path, true)
-          if (opened) {
-            useFileStore.getState().setBooted(true)
-            return
-          }
-        }
-        const draft = await window.docflow.session.load()
-        if (!cancelled && draft && draft.dirty && draft.fileContent !== draft.savedContent) {
-          useFileStore.getState().setRecovery(toRecovery(draft))
-        }
-      } catch {
-        // The app remains usable with the welcome document.
-      } finally {
-        if (!cancelled) useFileStore.getState().setBooted(true)
-      }
-    }
-
-    void boot()
-    return () => {
-      cancelled = true
+  const openFind = useCallback((showReplace = false) => {
+    const search = useSearchStore.getState()
+    const ui = useUIStore.getState()
+    if (ui.viewMode === 'preview') ui.setUIState({ viewMode: 'split' })
+    search.openFind(showReplace)
+    const editor = editorRef.current
+    if (editor && document.activeElement === editor && editor.selectionEnd > editor.selectionStart) {
+      search.setSelectionRange({ start: editor.selectionStart, end: editor.selectionEnd })
+    } else {
+      search.setSelectionRange(null)
     }
   }, [])
 
+  const openFindInFiles = useCallback(() => {
+    const search = useSearchStore.getState()
+    const ui = useUIStore.getState()
+    if (ui.viewMode === 'preview') ui.setUIState({ viewMode: 'split' })
+    search.openFindInFiles()
+  }, [])
+
   const openExport = useCallback(() => {
-    if (useFileStore.getState().viewMode === 'editor') {
-      useFileStore.getState().setViewMode('split')
+    if (useUIStore.getState().viewMode === 'editor') {
+      useUIStore.getState().setUIState({ viewMode: 'split' })
     }
     setExportOpen(true)
   }, [])
 
   const focusEditor = useCallback(() => {
-    if (useFileStore.getState().viewMode === 'preview') {
-      useFileStore.getState().setViewMode('split')
+    if (useUIStore.getState().viewMode === 'preview') {
+      useUIStore.getState().setUIState({ viewMode: 'split' })
       requestAnimationFrame(() => editorRef.current?.focus())
       return
     }
@@ -159,35 +135,114 @@ export default function App() {
   }, [])
 
   const revealInFolder = useCallback(() => {
-    const current = useFileStore.getState().filePath
-    if (!current) {
-      useFileStore.getState().showToast('info', 'Save the document first', 'There is no file on disk yet.')
+    const current = useTabStore.getState().getActive()
+    if (!current?.filePath) {
+      useFileStore.getState().showToast('info', t('common.saveFirst'), t('common.saveFirstDetail'))
       return
     }
-    void window.docflow.app.showItemInFolder(current).catch(() => undefined)
+    void window.docflow.app.showItemInFolder(current.filePath).catch(() => undefined)
+  }, [t])
+
+  const togglePin = useCallback(() => {
+    const id = useTabStore.getState().activeTabId
+    if (id) useTabStore.getState().togglePin(id)
+  }, [])
+
+  const cycleTab = useCallback((direction: 1 | -1) => {
+    const state = useTabStore.getState()
+    if (state.tabs.length < 2) return
+    const index = state.tabs.findIndex((tab) => tab.id === state.activeTabId)
+    const next = (index + direction + state.tabs.length) % state.tabs.length
+    state.activateTab(state.tabs[next].id)
+  }, [])
+
+  // Keep the window count in sync across windows without a dedicated broadcast.
+  useEffect(() => {
+    let cancelled = false
+    const sync = () => {
+      void window.docflow?.window
+        ?.count?.()
+        .then((count) => {
+          if (!cancelled) setWindowCount(count)
+        })
+        .catch(() => undefined)
+    }
+    sync()
+    const timer = window.setInterval(sync, 4000)
+    window.addEventListener('focus', sync)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', sync)
+    }
+  }, [])
+
+  // Open a file passed by the OS after the session has been hydrated.
+  useEffect(() => {
+    let disposed = false
+    let started = false
+    const boot = async () => {
+      if (started) return
+      started = true
+      for (let attempt = 0; attempt < 80 && !useTabStore.getState().hydrated; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+      if (disposed) return
+      try {
+        const launch = await window.docflow.app.consumeLaunchFile()
+        if (launch) await managerRef.current.openPath(launch.path, true)
+      } catch {
+        // The welcome document remains usable if launch routing fails.
+      }
+    }
+    void boot()
+    return () => {
+      disposed = true
+    }
   }, [])
 
   useEffect(() => {
     const unsubscribeOpen = window.docflow.app.onOpenFile(({ path }) => {
-      void sessionRef.current.openPath(path)
+      void managerRef.current.openPath(path)
     })
 
     const unsubscribeAction = window.docflow.app.onAction(({ action }) => {
+      const current = useTabStore.getState()
+      const api = managerRef.current
       switch (action) {
         case 'new':
-          void sessionRef.current.newDocument()
+        case 'newTab':
+          void api.newTab()
           break
         case 'open':
-          void sessionRef.current.openDialog()
+          void api.openDialog()
           break
         case 'save':
-          void sessionRef.current.save()
+          void api.save()
           break
         case 'saveAs':
-          void sessionRef.current.saveAs()
+          void api.saveAs()
+          break
+        case 'saveAll':
+          void api.saveAll()
+          break
+        case 'closeTab':
+          if (current.activeTabId) void api.closeTab(current.activeTabId)
+          break
+        case 'closeOthers':
+          if (current.activeTabId) void api.closeOthers(current.activeTabId)
+          break
+        case 'closeRight':
+          if (current.activeTabId) void api.closeToRight(current.activeTabId)
+          break
+        case 'closeLeft':
+          if (current.activeTabId) void api.closeToLeft(current.activeTabId)
           break
         case 'request-save-and-close':
-          void sessionRef.current.requestSaveAndClose()
+          void api.requestSaveAndClose()
+          break
+        case 'discard-and-close':
+          void api.discardAndClose()
           break
         case 'export':
           openExport()
@@ -208,10 +263,19 @@ export default function App() {
           useUIStore.getState().setUIState({ isTocVisible: !useUIStore.getState().isTocVisible })
           break
         case 'find':
-          focusEditor()
+          openFind(false)
+          break
+        case 'replace':
+          openFind(true)
+          break
+        case 'findInFiles':
+          openFindInFiles()
           break
         case 'reveal':
           revealInFolder()
+          break
+        case 'newWindow':
+          void multiWindowRef.current.newWindow()
           break
         case 'quit':
           void window.docflow.window.close()
@@ -219,7 +283,33 @@ export default function App() {
         case 'guide':
           useFileStore
             .getState()
-            .showToast('info', 'User guide', 'Open docs/USER_GUIDE.md in the project folder for the full manual.')
+            .showToast('info', t('common.userGuide'), 'Open docs/USER_GUIDE.md in the project folder for the full manual.')
+          break
+        default:
+          break
+      }
+    })
+
+    const unsubscribeTabAction = window.docflow.app.onTabAction(({ action, tabId }) => {
+      const api = managerRef.current
+      switch (action) {
+        case 'close':
+          void api.closeTab(tabId)
+          break
+        case 'closeOthers':
+          void api.closeOthers(tabId)
+          break
+        case 'closeRight':
+          void api.closeToRight(tabId)
+          break
+        case 'closeLeft':
+          void api.closeToLeft(tabId)
+          break
+        case 'togglePin':
+          api.togglePin(tabId)
+          break
+        case 'detach':
+          void multiWindowRef.current.detachTab(tabId)
           break
         default:
           break
@@ -229,46 +319,87 @@ export default function App() {
     return () => {
       unsubscribeOpen()
       unsubscribeAction()
+      unsubscribeTabAction()
     }
-  }, [focusEditor, openExport, revealInFolder])
+  }, [openExport, openFind, openFindInFiles, revealInFolder, t])
 
   const handleFormat = useCallback(
     (action: FormatAction) => {
       const textarea = editorRef.current
-      if (!textarea) return
+      const id = useTabStore.getState().activeTabId
+      if (!textarea || !id) return
       const result = applyFormatting(textarea, action)
-      setContent(result.value)
+      useTabStore.getState().setBuffer(id, result.value)
       requestAnimationFrame(() => {
         textarea.focus()
         textarea.setSelectionRange(result.selectionStart, result.selectionEnd)
-        const before = result.value.slice(0, result.selectionStart)
-        const lines = before.split('\n')
+        const position = cursorFromOffset(result.value, result.selectionStart)
         setCursor({
-          line: lines.length,
-          column: (lines[lines.length - 1]?.length ?? 0) + 1,
+          line: position.line,
+          column: position.column,
           selection: Math.abs(result.selectionEnd - result.selectionStart)
         })
       })
     },
-    [setContent]
+    []
   )
 
   useEffect(() => {
     const el = editorRef.current
     if (!el) return
-    const onScroll = () => handleEditorScroll()
+    const onScroll = () => {
+      handleEditorScroll()
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => {
+        scrollTimerRef.current = null
+        const id = useTabStore.getState().activeTabId
+        if (id) useTabStore.getState().updateTab(id, { editorScrollTop: el.scrollTop })
+      }, 180)
+    }
     el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current)
+        scrollTimerRef.current = null
+      }
+    }
   }, [handleEditorScroll])
 
-  const focusHeading = useCallback((id: string) => {
-    const item = parsed.headings.find((h) => h.id === id)
-    if (item) handleTocClick(item)
-    else {
-      const target = previewRef.current?.querySelector<HTMLElement>(`[id="${id.replace(/"/g, '\\"')}"]`)
-      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }, [parsed.headings, handleTocClick, previewRef])
+  useEffect(() => {
+    const tab = useTabStore.getState().getTab(useTabStore.getState().activeTabId ?? '')
+    if (!tab) return
+    const frame = requestAnimationFrame(() => {
+      const editor = editorRef.current
+      if (editor) {
+        editor.scrollTop = tab.editorScrollTop
+        const start = Math.min(tab.cursorOffset, editor.value.length)
+        const end = Math.min(Math.max(tab.selectionEnd, start), editor.value.length)
+        editor.setSelectionRange(start, end)
+      }
+      const preview = previewRef.current
+      if (preview) preview.scrollTop = tab.previewScrollTop
+    })
+    const position = cursorFromOffset(tab.fileContent, tab.cursorOffset)
+    setCursor({
+      line: position.line,
+      column: position.column,
+      selection: Math.max(0, tab.selectionEnd - tab.cursorOffset)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activeTabId])
+
+  const focusHeading = useCallback(
+    (id: string) => {
+      const item = parsed.headings.find((heading) => heading.id === id)
+      if (item) handleTocClick(item)
+      else {
+        const target = previewRef.current?.querySelector<HTMLElement>(`[id="${id.replace(/"/g, '\\"')}"]`)
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+    [parsed.headings, handleTocClick]
+  )
 
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -277,44 +408,39 @@ export default function App() {
     if (!file) return
     const path = window.docflow.file.getPathForFile(file)
     if (!path) {
-      useFileStore.getState().showToast('error', 'This file cannot be opened', 'Drag a Markdown file from your file manager.')
+      useFileStore.getState().showToast('error', t('common.openFailed'), t('common.openFailedDetail'))
       return
     }
-    await sessionRef.current.openPath(path)
-  }
-
-  const handleRestore = async () => {
-    const draft = useFileStore.getState().recovery
-    if (!draft) return
-    useFileStore.getState().loadRecovery(draft)
-    if (draft.filePath) await window.docflow.file.watch(draft.filePath).catch(() => undefined)
-    useFileStore.getState().showToast('success', 'Draft restored', 'Review the content and save when ready.')
-  }
-
-  const handleDiscardRecovery = async () => {
-    useFileStore.getState().setRecovery(null)
-    await window.docflow.session.clear().catch(() => undefined)
-    useFileStore.getState().showToast('info', 'Draft discarded', 'The recovery copy was removed.')
-  }
-
-  const handleOpenOriginal = async () => {
-    const draft = useFileStore.getState().recovery
-    if (!draft?.filePath) return
-    useFileStore.getState().setRecovery(null)
-    await window.docflow.session.clear().catch(() => undefined)
-    await sessionRef.current.openPath(draft.filePath, true)
+    await managerRef.current.openPath(path)
   }
 
   useKeyboardShortcuts({
-    onNew: () => void sessionRef.current.newDocument(),
-    onOpen: () => void sessionRef.current.openDialog(),
-    onSave: () => void sessionRef.current.save(),
-    onSaveAs: () => void sessionRef.current.saveAs(),
+    onNew: () => void managerRef.current.newTab(),
+    onOpen: () => void managerRef.current.openDialog(),
+    onSave: () => void managerRef.current.save(),
+    onSaveAs: () => void managerRef.current.saveAs(),
     onExport: openExport,
-    onFind: focusEditor
+    onFind: () => (useSearchStore.getState().isOpen ? findNext() : openFind(false)),
+    onReplace: () => openFind(true),
+    onFindInFiles: openFindInFiles,
+    onCloseTab: () => {
+      const id = useTabStore.getState().activeTabId
+      if (id) void managerRef.current.closeTab(id)
+    },
+    onNextTab: () => cycleTab(1),
+    onPreviousTab: () => cycleTab(-1),
+    onTogglePin: togglePin,
+    onNewWindow: () => void multiWindowRef.current.newWindow(),
+    onFindNext: () => {
+      if (useSearchStore.getState().query) findNext()
+      else openFind(false)
+    },
+    onFindPrevious: () => findPrevious()
   })
 
   const title = fileName.replace(/\.[^.]+$/, '')
+  const externalChange = activeTab?.externalChange ?? null
+  const conflict = activeTab?.conflict ?? null
 
   return (
     <div
@@ -329,27 +455,41 @@ export default function App() {
       onDrop={(event) => void handleDrop(event)}
     >
       <TopNav
-        onNew={() => void sessionRef.current.newDocument()}
-        onOpen={() => void sessionRef.current.openDialog()}
-        onSave={() => void sessionRef.current.save()}
-        onSaveAs={() => void sessionRef.current.saveAs()}
+        onNew={() => void manager.newTab()}
+        onOpen={() => void manager.openDialog()}
+        onSave={() => void manager.save()}
+        onSaveAs={() => void manager.saveAs()}
         onExport={openExport}
         onZen={() => setZenOpen(true)}
         onCode={() => setCodeOpen(true)}
         onSettings={() => setSettingsOpen(true)}
         onToggleToc={() => useUIStore.getState().setUIState({ isTocVisible: !useUIStore.getState().isTocVisible })}
-        onOpenRecent={(path) => void sessionRef.current.openPath(path)}
-        onPinRecent={(path) => void sessionRef.current.togglePin(path)}
-        onRemoveRecent={(path) => void sessionRef.current.removeRecent(path)}
-        onClearRecent={() => void sessionRef.current.clearRecent()}
+        onOpenRecent={(path) => void manager.openPath(path)}
+        onPinRecent={(path) => void manager.toggleRecentPin(path)}
+        onRemoveRecent={(path) => void manager.removeRecent(path)}
+        onClearRecent={() => void manager.clearRecent()}
+        onNewWindow={() => void multiWindow.newWindow()}
+        onFindInFiles={openFindInFiles}
       />
+
+      <TabBar
+        onNewTab={() => void manager.newTab()}
+        onCloseTab={(id) => void manager.closeTab(id)}
+        onDetachTab={(id) => void multiWindow.detachTab(id)}
+      />
+
+      <UpdateBanner />
 
       <FormattingToolbar
         viewMode={viewMode}
         disabled={viewMode === 'preview'}
-        onViewMode={setViewMode}
+        onViewMode={(mode) => setViewMode({ viewMode: mode })}
         onFormat={handleFormat}
       />
+
+      <FindReplaceBar editorRef={editorRef} />
+      <FindResultsPanel editorRef={editorRef} />
+      <FindInFilesPanel editorRef={editorRef} />
 
       <div className="workspace">
         {uiState.isTocVisible && (
@@ -366,16 +506,21 @@ export default function App() {
             <div className="external-banner">
               <AlertTriangle size={15} />
               <span>
-                <strong>{fileName}</strong> was changed by another program.
+                <strong>{fileName}</strong> {t('common.externalChange', { name: '' }).trim()}
               </span>
               <div className="external-actions">
-                <button type="button" onClick={() => void session.reloadExternal()}>
-                  <RefreshCw size={13} /> Reload from disk
+                <button type="button" onClick={() => void manager.reloadExternal(activeTabId ?? undefined)}>
+                  <RefreshCw size={13} /> {t('common.reloadFromDisk')}
                 </button>
-                <button type="button" onClick={session.dismissExternal}>
-                  Keep editing
+                <button type="button" onClick={() => manager.dismissExternal(activeTabId ?? undefined)}>
+                  {t('common.keepEditing')}
                 </button>
-                <button type="button" className="external-close" onClick={session.dismissExternal} title="Dismiss">
+                <button
+                  type="button"
+                  className="external-close"
+                  onClick={() => manager.dismissExternal(activeTabId ?? undefined)}
+                  title={t('common.dismiss')}
+                >
                   <X size={13} />
                 </button>
               </div>
@@ -401,6 +546,10 @@ export default function App() {
                 settings={settings}
                 zoomLevel={uiState.zoomLevel}
                 isPagedMode={uiState.isPagedMode}
+                onScrollTop={(top) => {
+                  const id = useTabStore.getState().activeTabId
+                  if (id) useTabStore.getState().updateTab(id, { previewScrollTop: top })
+                }}
               />
             )}
           </div>
@@ -410,18 +559,21 @@ export default function App() {
       <StatusBar
         filePath={filePath}
         dirty={dirty}
-        encoding={encoding}
-        lineEnding={lineEnding}
+        encoding={activeTab?.encoding ?? 'utf-8'}
+        lineEnding={activeTab?.lineEnding ?? 'lf'}
         cursor={cursor}
         stats={stats}
+        tabCount={tabs.length}
+        windowCount={windowCount}
+        zoomLevel={uiState.zoomLevel}
       />
 
       {dragging && (
         <div className="drop-overlay">
           <div className="drop-card">
             <span className="drop-icon">↓</span>
-            <strong>Drop to open</strong>
-            <span>Markdown, text, or any readable document</span>
+            <strong>{t('common.dropToOpen')}</strong>
+            <span>{t('common.dropHint')}</span>
           </div>
         </div>
       )}
@@ -433,7 +585,7 @@ export default function App() {
         markdown={content}
         title={fileName}
         settings={settings}
-        getPreviewElement={() => previewRef.current}
+        getPreviewElement={() => previewRef.current?.querySelector('.document-page') ?? null}
       />
       <ZenReviewModal
         open={zenOpen}
@@ -446,23 +598,14 @@ export default function App() {
       <CodeScriptModal open={codeOpen} onClose={() => setCodeOpen(false)} blocks={codeBlocks} />
       <ShortcutHelpModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-      {recovery && (
-        <RecoveryPrompt
-          recovery={recovery}
-          onRestore={() => void handleRestore()}
-          onDiscard={() => void handleDiscardRecovery()}
-          onOpenOriginal={() => void handleOpenOriginal()}
-        />
-      )}
-
-      {conflict && (
+      {conflict && activeTabId && (
         <ConflictDialog
           diskMtime={conflict.diskMtime}
           fileName={fileName}
-          onOverwrite={() => void session.overwriteConflict()}
-          onReload={() => void session.reloadConflict()}
-          onSaveAs={() => void session.saveAsConflict()}
-          onCancel={() => useFileStore.getState().setConflict(null)}
+          onOverwrite={() => void manager.overwriteConflict(activeTabId)}
+          onReload={() => void manager.reloadConflict(activeTabId)}
+          onSaveAs={() => void manager.saveAsConflict(activeTabId)}
+          onCancel={() => useTabStore.getState().setConflict(activeTabId, null)}
         />
       )}
 

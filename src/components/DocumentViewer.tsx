@@ -1,4 +1,4 @@
-import { forwardRef, type MouseEvent } from 'react'
+import { forwardRef, type MouseEvent, type UIEvent } from 'react'
 import type { DocumentSettings } from '../types/document'
 import { copyText } from '../utils/clipboard'
 import { useFileStore } from '../store/fileStore'
@@ -12,10 +12,11 @@ interface DocumentViewerProps {
   zen?: boolean
   zoomLevel?: number
   isPagedMode?: boolean
+  onScrollTop?: (top: number) => void
 }
 
 export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(function DocumentViewer(
-  { html, title, settings, zen = false, zoomLevel = 100, isPagedMode = true },
+  { html, title, settings, zen = false, zoomLevel = 100, isPagedMode = true, onScrollTop },
   ref
 ) {
   const { handleContextMenu } = useContextMenu()
@@ -62,12 +63,13 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(fu
 
   return (
     <section
+      ref={ref}
       className={`preview-pane ${zen ? 'zen-preview' : ''}`}
       onContextMenu={(e) => handleContextMenu(e, 'preview')}
+      onScroll={(event: UIEvent<HTMLElement>) => onScrollTop?.(event.currentTarget.scrollTop)}
     >
       <div className="preview-stage">
         <article
-          ref={ref}
           style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
           className={`document-page theme-${settings.theme} paper-${settings.paperTone} font-${settings.fontFamily} size-${settings.fontSize} margin-${settings.marginSize} ${settings.justifyText ? 'justify-text' : ''} ${settings.autoNumberHeadings ? 'numbered-headings' : ''} ${isPagedMode ? 'paged-mode' : 'continuous-mode'}`}
         >

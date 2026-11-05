@@ -1,0 +1,18 @@
+{
+  "checking": "Checking for updates…",
+  "available": "Update v{{version}} is available",
+  "downloading": "Downloading update… {{progress}}%",
+  "ready": "Update v{{version}} is ready",
+  "later": "Later",
+  "restart": "Restart to Update",
+  "skip": "Skip this version",
+  "download": "Download",
+  "error": "Update check failed",
+  "retry": "Retry",
+  "channel": "Update channel",
+  "stable": "Stable",
+  "beta": "Beta",
+  "autoCheck": "Check for updates automatically",
+  "upToDate": "You are up to date",
+  "notAvailable": "Updates are only available in packaged builds"
+}

@@ -1,0 +1,11 @@
+{
+  "show": "Tampilkan DocFlow Studio",
+  "hide": "Sembunyikan DocFlow Studio",
+  "newTab": "Tab Baru",
+  "recent": "Berkas Terbaru",
+  "checkUpdates": "Periksa Pembaruan…",
+  "quit": "Keluar dari DocFlow Studio",
+  "enabled": "Tampilkan ikon tray",
+  "minimizeOnClose": "Minimalkan ke tray saat ditutup",
+  "startMinimized": "Mulai terminimalkan (placeholder)"
+}

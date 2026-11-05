@@ -1,6 +1,7 @@
 import { FileText, HardDrive, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type { DocumentStats } from '../types/document'
 import type { LineEnding, TextEncoding } from '../../electron/types/ipc'
+import { useI18n } from '../hooks/useI18n'
 
 interface StatusBarProps {
   filePath: string | null
@@ -10,6 +11,9 @@ interface StatusBarProps {
   cursor: { line: number; column: number; selection: number }
   stats: DocumentStats
   saving?: boolean
+  tabCount?: number
+  windowCount?: number
+  zoomLevel?: number
 }
 
 const ENCODING_LABEL: Record<TextEncoding, string> = {
@@ -24,30 +28,47 @@ const LINE_ENDING_LABEL: Record<LineEnding, string> = {
   cr: 'CR'
 }
 
-export function StatusBar({ filePath, dirty, encoding, lineEnding, cursor, stats, saving }: StatusBarProps) {
+export function StatusBar({
+  filePath,
+  dirty,
+  encoding,
+  lineEnding,
+  cursor,
+  stats,
+  saving,
+  tabCount = 0,
+  windowCount = 1,
+  zoomLevel = 100
+}: StatusBarProps) {
+  const { t, locale } = useI18n()
+
   return (
     <footer className="statusbar">
       <div className="status-left">
         {filePath ? <HardDrive size={13} /> : <FileText size={13} />}
-        <span className="status-path" title={filePath ?? 'This document has not been saved yet'}>
-          {filePath ?? 'Not saved yet'}
+        <span className="status-path" title={filePath ?? t('common.notSaved')}>
+          {filePath ?? t('common.notSaved')}
         </span>
       </div>
       <div className="status-right">
         <span className={`status-dirty ${dirty ? 'is-dirty' : 'is-saved'}`}>
           {dirty ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-          {saving ? 'Saving…' : dirty ? 'Unsaved' : 'Saved'}
+          {saving ? t('common.exporting') : dirty ? t('common.unsaved') : t('common.saved')}
         </span>
         <span className="status-divider" />
-        <span>Ln {cursor.line}, Col {cursor.column}</span>
-        {cursor.selection > 0 && <span>{cursor.selection} selected</span>}
+        <span>{t('common.line')} {cursor.line}, {t('common.column')} {cursor.column}</span>
+        {cursor.selection > 0 && <span>{cursor.selection} {t('common.selected')}</span>}
         <span className="status-divider" />
-        <span>{stats.words.toLocaleString()} words</span>
-        <span>{stats.characters.toLocaleString()} chars</span>
+        <span>{stats.words.toLocaleString()} {t('common.words')}</span>
+        <span>{stats.characters.toLocaleString()} {t('common.chars')}</span>
+        <span className="status-divider" />
+        <span>{tabCount} {t('tabs.tabs')}</span>
+        <span>{windowCount} {locale === 'id' ? 'jendela' : 'windows'}</span>
+        <span>{zoomLevel}%</span>
         <span className="status-divider" />
         <span>{ENCODING_LABEL[encoding]}</span>
         <span>{LINE_ENDING_LABEL[lineEnding]}</span>
-        <span>Markdown</span>
+        <span>{locale.toUpperCase()}</span>
       </div>
     </footer>
   )

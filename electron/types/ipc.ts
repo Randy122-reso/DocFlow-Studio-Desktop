@@ -1,6 +1,11 @@
 export type TextEncoding = 'utf-8' | 'utf-8-bom' | 'utf-16le'
 export type LineEnding = 'lf' | 'crlf' | 'cr'
 
+export type Locale = 'auto' | 'en' | 'id'
+export type ResolvedLocale = 'en' | 'id'
+export type UpdateChannel = 'stable' | 'beta'
+export type FindMode = 'normal' | 'extended' | 'regex'
+
 export interface FilePayload {
   path: string
   name: string
@@ -37,6 +42,7 @@ export interface RecentFile {
   pinned: boolean
 }
 
+/** Legacy single-document recovery draft (schema v1–v4). */
 export interface SessionDraft {
   filePath: string | null
   fileName: string
@@ -74,8 +80,14 @@ export interface WindowBounds {
   y: number | null
 }
 
+export interface TrayConfig {
+  enabled: boolean
+  minimizeOnClose: boolean
+  startMinimized: boolean
+}
+
 export interface AppSettings {
-  schemaVersion: number
+  schemaVersion: 4
   theme: ThemeName
   fontSize: FontSize
   fontFamily: FontFamily
@@ -89,6 +101,10 @@ export interface AppSettings {
   windowBounds: WindowBounds
   lastOpenedDir: string | null
   lastExportDir: string | null
+  locale: Locale
+  updateChannel: UpdateChannel
+  autoCheckUpdates: boolean
+  tray: TrayConfig
   uiState: UIState
 }
 
@@ -135,3 +151,132 @@ export interface WindowState {
 }
 
 export type UnsavedChoice = 'save' | 'discard' | 'cancel'
+
+/* ── Search & Replace ─────────────────────────────────────────── */
+
+export interface FindOptions {
+  matchCase: boolean
+  matchWholeWord: boolean
+  mode: FindMode
+  dotMatchesNewline: boolean
+  wrapAround: boolean
+  inSelection: boolean
+  backward: boolean
+  extendedUnicode: boolean
+}
+
+export interface FindResult {
+  tabId?: string
+  filePath: string
+  lineNumber: number
+  columnStart: number
+  columnEnd: number
+  preview: string
+}
+
+export interface FindInFilesInput {
+  rootDir: string
+  glob: string
+  query: string
+  replaceWith?: string
+  options: FindOptions
+  maxResults?: number
+  dryRun?: boolean
+}
+
+export interface FindFileChange {
+  path: string
+  count: number
+  diff: string
+}
+
+export interface FindInFilesResponse {
+  results: FindResult[]
+  truncated: boolean
+  filesScanned: number
+  cancelled: boolean
+}
+
+export interface ReplaceInFilesResponse {
+  changes: FindFileChange[]
+  written: boolean
+  cancelled: boolean
+}
+
+/* ── Tabs & multi-window ──────────────────────────────────────── */
+
+export interface TabSnapshot {
+  id: string
+  filePath: string | null
+  displayName: string
+  fileContent: string
+  savedContent: string
+  diskMtime: number | null
+  encoding: TextEncoding
+  lineEnding: LineEnding
+  isPinned: boolean
+  editorScrollTop: number
+  previewScrollTop: number
+  cursorOffset: number
+  selectionEnd: number
+}
+
+export interface SessionWindow {
+  id: string
+  bounds: WindowBounds
+  tabs: TabSnapshot[]
+  activeTabId: string | null
+}
+
+export interface FindOptionsSnapshot extends Omit<FindOptions, never> {}
+
+export interface SessionState {
+  schemaVersion: 5
+  windows: SessionWindow[]
+  activeWindowId: string | null
+  findHistory: string[]
+  findOptions: FindOptionsSnapshot
+}
+
+export interface WindowInfo {
+  id: string
+  bounds: WindowBounds
+  maximized: boolean
+  fullScreen: boolean
+  initialTabs: TabSnapshot[]
+  activeTabId: string | null
+}
+
+/* ── Update ───────────────────────────────────────────────────── */
+
+export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error'
+
+export interface UpdateState {
+  status: UpdateStatus
+  availableVersion: string | null
+  downloadProgress: number
+  releaseNotes: string | null
+  lastCheckedAt: number | null
+  channel: UpdateChannel
+  error: string | null
+  skippedVersion: string | null
+}
+
+export interface UpdateCheckResult {
+  updateAvailable: boolean
+  version: string | null
+  state: UpdateState
+}
+
+/* ── Context menu ─────────────────────────────────────────────── */
+
+export type ContextMenuType = 'editor' | 'preview' | 'tab'
+
+export interface ContextMenuRequest {
+  type: ContextMenuType
+  tabId?: string
+  hasSelection?: boolean
+  isEditable?: boolean
+  isPinned?: boolean
+  filePath?: string | null
+}

@@ -9,6 +9,8 @@ import type { ViewMode } from '../types/document'
 import type { FormatAction } from '../utils/editorActions'
 import { useUIStore } from '../store/uiStore'
 import { useFileStore } from '../store/fileStore'
+import { useTabStore } from '../store/tabStore'
+import { useI18n } from '../hooks/useI18n'
 import { copyText } from '../utils/clipboard'
 
 interface FormattingToolbarProps {
@@ -18,30 +20,31 @@ interface FormattingToolbarProps {
   onFormat(action: FormatAction): void
 }
 
-const FORMAT_BUTTONS: Array<{ action: FormatAction; label: string; icon: typeof Bold }> = [
-  { action: 'bold', label: 'Bold (Ctrl+B)', icon: Bold },
-  { action: 'italic', label: 'Italic (Ctrl+I)', icon: Italic },
-  { action: 'strike', label: 'Strikethrough', icon: Strikethrough },
-  { action: 'inlineCode', label: 'Inline code', icon: Code },
-  { action: 'codeBlock', label: 'Code block', icon: SquareCode },
-  { action: 'link', label: 'Link', icon: Link2 },
-  { action: 'image', label: 'Image', icon: Image },
-  { action: 'bullet', label: 'Bullet list', icon: List },
-  { action: 'numbered', label: 'Numbered list', icon: ListOrdered },
-  { action: 'task', label: 'Task list', icon: ListChecks },
-  { action: 'hr', label: 'Horizontal rule', icon: Minus },
-  { action: 'h1', label: 'Heading 1', icon: Heading1 },
-  { action: 'h2', label: 'Heading 2', icon: Heading2 },
-  { action: 'h3', label: 'Heading 3', icon: Heading3 },
-  { action: 'quote', label: 'Blockquote', icon: Quote },
-  { action: 'table', label: 'Table', icon: Table2 }
+const FORMAT_BUTTONS: Array<{ action: FormatAction; icon: typeof Bold }> = [
+  { action: 'bold', icon: Bold },
+  { action: 'italic', icon: Italic },
+  { action: 'strike', icon: Strikethrough },
+  { action: 'inlineCode', icon: Code },
+  { action: 'codeBlock', icon: SquareCode },
+  { action: 'link', icon: Link2 },
+  { action: 'image', icon: Image },
+  { action: 'bullet', icon: List },
+  { action: 'numbered', icon: ListOrdered },
+  { action: 'task', icon: ListChecks },
+  { action: 'hr', icon: Minus },
+  { action: 'h1', icon: Heading1 },
+  { action: 'h2', icon: Heading2 },
+  { action: 'h3', icon: Heading3 },
+  { action: 'quote', icon: Quote },
+  { action: 'table', icon: Table2 }
 ]
 
 export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: FormattingToolbarProps) {
   const settings = useFileStore((s) => s.settings)
+  const content = useTabStore((state) => state.tabs.find((tab) => tab.id === state.activeTabId)?.fileContent ?? '')
   const ui = useUIStore()
+  const { t } = useI18n()
   const [copied, setCopied] = useState(false)
-  const content = useFileStore((s) => s.content)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -70,18 +73,19 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       ref={toolbarRef}
     >
       {/* Format group */}
-      <div className="format-group" aria-label="Formatting">
+      <div className="format-group" aria-label={t('editor.formatting')}>
         {FORMAT_BUTTONS.map((button) => {
           const Icon = button.icon
+          const label = t(`editor.${button.action}`)
           return (
             <button
               key={button.action}
               type="button"
               className="tool-button"
-              title={button.label}
+              title={label}
               disabled={disabled}
               onClick={() => onFormat(button.action)}
-              aria-label={button.label}
+              aria-label={label}
             >
               <Icon size={15} />
             </button>
@@ -92,9 +96,9 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* Theme / Font / Page / Margin */}
-      <div className="format-group" aria-label="Document style">
+      <div className="format-group" aria-label={t('editor.documentStyle')}>
         <select
-          aria-label="Theme"
+          aria-label={t('editor.theme')}
           className="toolbar-select"
           value={settings.theme}
           onChange={(e) => useFileStore.getState().setSettings({ theme: e.target.value as typeof settings.theme })}
@@ -107,7 +111,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         </select>
 
         <select
-          aria-label="Font size"
+          aria-label={t('editor.fontSize')}
           className="toolbar-select"
           value={settings.fontSize}
           onChange={(e) => useFileStore.getState().setSettings({ fontSize: e.target.value as typeof settings.fontSize })}
@@ -118,7 +122,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         </select>
 
         <select
-          aria-label="Page size"
+          aria-label={t('editor.pageSize')}
           className="toolbar-select"
           value={settings.pageSize}
           onChange={(e) => useFileStore.getState().setSettings({ pageSize: e.target.value as typeof settings.pageSize })}
@@ -128,7 +132,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         </select>
 
         <select
-          aria-label="Margin"
+          aria-label={t('editor.margin')}
           className="toolbar-select"
           value={settings.marginSize}
           onChange={(e) => useFileStore.getState().setSettings({ marginSize: e.target.value as typeof settings.marginSize })}
@@ -142,11 +146,11 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* View toggles */}
-      <div className="format-group" aria-label="View toggles">
+      <div className="format-group" aria-label={t('editor.viewToggles')}>
         <button
           type="button"
           className={`tool-button ${ui.isPagedMode ? 'active' : ''}`}
-          title="Paged mode"
+          title={t('editor.paged')}
           onClick={ui.togglePaged}
           aria-pressed={ui.isPagedMode}
         >
@@ -155,7 +159,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${!ui.isPagedMode ? 'active' : ''}`}
-          title="Continuous mode"
+          title={t('editor.continuous')}
           onClick={ui.togglePaged}
           aria-pressed={!ui.isPagedMode}
         >
@@ -165,7 +169,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${ui.autoScroll ? 'active' : ''}`}
-          title="Auto-scroll"
+          title={t('editor.autoScroll')}
           onClick={ui.toggleAutoScroll}
           aria-pressed={ui.autoScroll}
         >
@@ -175,7 +179,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${ui.syncScrollWithToc ? 'active' : ''}`}
-          title="Sync TOC scroll"
+          title={t('editor.syncToc')}
           onClick={ui.toggleSyncToc}
           aria-pressed={ui.syncScrollWithToc}
         >
@@ -185,9 +189,9 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className="tool-button"
-          title="Copy Markdown"
+          title={t('editor.copyMarkdown')}
           onClick={handleCopyMD}
-          aria-label="Copy Markdown"
+          aria-label={t('editor.copyMarkdown')}
         >
           {copied ? <Check size={15} /> : <Copy size={15} />}
         </button>
@@ -196,13 +200,13 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* Zoom controls */}
-      <div className="format-group" aria-label="Zoom">
+      <div className="format-group" aria-label={t('editor.zoom')}>
         <button
           type="button"
           className="tool-button"
-          title="Zoom out"
+          title={t('editor.zoomOut')}
           onClick={() => ui.setZoom(ui.zoomLevel - 10)}
-          aria-label="Zoom out"
+          aria-label={t('editor.zoomOut')}
         >
           <ZoomOut size={15} />
         </button>
@@ -210,18 +214,18 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className="tool-button"
-          title="Zoom in"
+          title={t('editor.zoomIn')}
           onClick={() => ui.setZoom(ui.zoomLevel + 10)}
-          aria-label="Zoom in"
+          aria-label={t('editor.zoomIn')}
         >
           <ZoomIn size={15} />
         </button>
         <button
           type="button"
           className="tool-button"
-          title="Reset zoom"
+          title={t('editor.resetZoom')}
           onClick={() => ui.setZoom(100)}
-          aria-label="Reset zoom"
+          aria-label={t('editor.resetZoom')}
         >
           <RotateCcw size={15} />
         </button>
@@ -230,11 +234,11 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
       <span className="toolbar-divider" />
 
       {/* View mode */}
-      <div className="format-group" aria-label="View mode">
+      <div className="format-group" aria-label={t('editor.viewMode')}>
         <button
           type="button"
           className={`tool-button ${viewMode === 'editor' ? 'active' : ''}`}
-          title="Editor only"
+          title={t('editor.editorOnly')}
           onClick={() => onViewMode('editor')}
           aria-pressed={viewMode === 'editor'}
         >
@@ -243,7 +247,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${viewMode === 'split' ? 'active' : ''}`}
-          title="Split"
+          title={t('editor.split')}
           onClick={() => onViewMode('split')}
           aria-pressed={viewMode === 'split'}
         >
@@ -252,7 +256,7 @@ export function FormattingToolbar({ viewMode, disabled, onViewMode, onFormat }: 
         <button
           type="button"
           className={`tool-button ${viewMode === 'preview' ? 'active' : ''}`}
-          title="Preview only"
+          title={t('editor.previewOnly')}
           onClick={() => onViewMode('preview')}
           aria-pressed={viewMode === 'preview'}
         >

@@ -1,14 +1,17 @@
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import type { Logger } from '../utils/logger'
 import type { OpenFileRouter } from '../services/OpenFileRouter'
 import type { DialogService } from '../services/DialogService'
+import type { ContextMenuService } from '../services/ContextMenuService'
 import type { AppConfig } from '../utils/config'
+import type { ContextMenuRequest } from '../types/ipc'
 import { registerHandler } from './handle'
-import { externalSchema, folderSchema } from './schemas'
+import { contextMenuSchema, externalSchema, folderSchema } from './schemas'
 
 export interface AppHandlerDeps {
   router: OpenFileRouter
   dialogs: DialogService
+  contextMenu: ContextMenuService
   config: AppConfig
   logger: Logger
 }
@@ -38,20 +41,10 @@ export function registerAppHandlers(deps: AppHandlerDeps): void {
     return { ok: true }
   })
 
-  registerHandler('app:showContextMenu', null, deps.logger, async (payload: unknown) => {
-    const type = (payload as { type?: string })?.type
-    const isEditor = type === 'editor'
-    const template: import('electron').MenuItemConstructorOptions[] = [
-      { label: 'Cut', role: 'cut', enabled: isEditor },
-      { label: 'Copy', role: 'copy' },
-      { label: 'Paste', role: 'paste', enabled: isEditor },
-      { type: 'separator' },
-      { label: 'Select All', role: 'selectAll' }
-    ]
-    const menu = Menu.buildFromTemplate(template)
-    const win = BrowserWindow.getFocusedWindow()
-    if (win) menu.popup({ window: win })
-    else menu.popup()
+  registerHandler('app:showContextMenu', contextMenuSchema, deps.logger, async (payload, event) => {
+    const request = payload as ContextMenuRequest
+    const win = BrowserWindow.fromWebContents(event.sender)
+    deps.contextMenu.show(request, win)
     return { ok: true }
   })
 }

@@ -10,11 +10,12 @@ import {
 } from 'lucide-react'
 import type { DocumentSettings } from '../types/document'
 import { buildDocxBlob, buildHtmlDocument, buildWordHtml, sanitizeFileName } from '../utils/docExport'
-import { buildPdfBlob, printDocument } from '../utils/pdfExport'
+import { buildPdfBlob, buildVectorPdfBlob, printDocument, UnsupportedVectorGlyphError } from '../utils/pdfExport'
 import { blobToBase64 } from '../utils/clipboard'
 import { describeError } from '../utils/errors'
+import { useI18n } from '../hooks/useI18n'
 
-type ExportFormat = 'docx' | 'pdf-print' | 'pdf-direct' | 'doc' | 'html' | 'md'
+type ExportFormat = 'docx' | 'pdf-vector' | 'pdf-raster' | 'pdf-print' | 'doc' | 'html' | 'md'
 
 interface ExportModalProps {
   open: boolean
@@ -25,26 +26,31 @@ interface ExportModalProps {
   getPreviewElement(): HTMLElement | null
 }
 
-const FORMATS: Array<{
+interface FormatItem {
   id: ExportFormat
-  label: string
-  detail: string
+  labelKey: string
+  detailKey: string
   icon: typeof FileText
   badge: string
-}> = [
-  { id: 'docx', label: 'Word Document', detail: 'Native .docx with styles, tables and page numbers.', icon: FileText, badge: 'DOCX' },
-  { id: 'pdf-print', label: 'PDF via Print', detail: 'Selectable text, opens the system print dialog.', icon: Printer, badge: 'PDF' },
-  { id: 'pdf-direct', label: 'Direct PDF', detail: 'Raster snapshot of the page. Great for sharing.', icon: FileDown, badge: 'PDF' },
-  { id: 'doc', label: 'Word HTML', detail: 'Legacy .doc that opens in Word and LibreOffice.', icon: FileCode2, badge: 'DOC' },
-  { id: 'html', label: 'Standalone HTML', detail: 'Self-contained page with embedded styles.', icon: FileCode2, badge: 'HTML' },
-  { id: 'md', label: 'Markdown', detail: 'Plain source file, byte-for-byte.', icon: FileText, badge: 'MD' }
+}
+
+const FORMATS: FormatItem[] = [
+  { id: 'docx', labelKey: 'common.exportDocx', detailKey: 'common.exportDocxDetail', icon: FileText, badge: 'DOCX' },
+  { id: 'pdf-vector', labelKey: 'common.exportVector', detailKey: 'common.exportVectorDetail', icon: FileDown, badge: 'PDF' },
+  { id: 'pdf-raster', labelKey: 'common.exportRaster', detailKey: 'common.exportRasterDetail', icon: FileDown, badge: 'PDF' },
+  { id: 'pdf-print', labelKey: 'common.exportPrint', detailKey: 'common.exportPrintDetail', icon: Printer, badge: 'PDF' },
+  { id: 'doc', labelKey: 'common.exportDoc', detailKey: 'common.exportDocDetail', icon: FileCode2, badge: 'DOC' },
+  { id: 'html', labelKey: 'common.exportHtml', detailKey: 'common.exportHtmlDetail', icon: FileCode2, badge: 'HTML' },
+  { id: 'md', labelKey: 'common.exportMarkdown', detailKey: 'common.exportMarkdownDetail', icon: FileText, badge: 'MD' }
 ]
 
 export function ExportModal({ open, onClose, markdown, title, settings, getPreviewElement }: ExportModalProps) {
-  const [format, setFormat] = useState<ExportFormat>('docx')
+  const { t } = useI18n()
+  const [format, setFormat] = useState<ExportFormat>('pdf-vector')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<{ path: string; size: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   if (!open) return null
 
@@ -54,13 +60,21 @@ export function ExportModal({ open, onClose, markdown, title, settings, getPrevi
     const dataBase64 = await blobToBase64(blob)
     const response = await window.docflow.file.writeBinary({ dataBase64, defaultName: fileName, filters })
     if (response.cancelled) return
-    if (!response.ok || !response.path) throw new Error('WRITE_FAILED: The export could not be saved')
+    if (!response.ok || !response.path) throw new Error(t('common.writeFailed'))
     setResult({ path: response.path, size: response.size ?? blob.size })
+  }
+
+  const saveRasterPdf = async () => {
+    const element = getPreviewElement()
+    if (!element) throw new Error(t('common.previewUnavailable'))
+    const blob = await buildPdfBlob(element, baseTitle, settings)
+    await saveBlob(blob, sanitizeFileName(baseTitle, '.pdf'), [{ name: 'PDF', extensions: ['pdf'] }])
   }
 
   const runExport = async () => {
     setBusy(true)
     setError(null)
+    setNotice(null)
     setResult(null)
     try {
       if (format === 'pdf-print') {
@@ -85,15 +99,25 @@ export function ExportModal({ open, onClose, markdown, title, settings, getPrevi
         await saveBlob(new Blob([markdown], { type: 'text/markdown' }), sanitizeFileName(baseTitle, '.md'), [
           { name: 'Markdown', extensions: ['md'] }
         ])
-      } else if (format === 'pdf-direct') {
-        const element = getPreviewElement()
-        if (!element) throw new Error('The preview is not available')
-        const blob = await buildPdfBlob(element, baseTitle, settings)
-        await saveBlob(blob, sanitizeFileName(baseTitle, '.pdf'), [{ name: 'PDF', extensions: ['pdf'] }])
+      } else if (format === 'pdf-vector') {
+        try {
+          const blob = await buildVectorPdfBlob(markdown, baseTitle, settings)
+          await saveBlob(blob, sanitizeFileName(baseTitle, '.pdf'), [{ name: 'PDF', extensions: ['pdf'] }])
+        } catch (caught) {
+          if (!(caught instanceof UnsupportedVectorGlyphError)) throw caught
+          setNotice(t('common.vectorFallback', { glyph: caught.glyph }))
+          await saveRasterPdf()
+        }
+      } else if (format === 'pdf-raster') {
+        await saveRasterPdf()
       }
     } catch (caught) {
       const described = describeError(caught)
-      setError(described.detail || described.message)
+      if (described.message === 'WRITE_FAILED' || described.detail) {
+        setError(described.detail || described.message)
+      } else {
+        setError(described.message)
+      }
     } finally {
       setBusy(false)
     }
@@ -101,13 +125,13 @@ export function ExportModal({ open, onClose, markdown, title, settings, getPrevi
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose() }}>
-      <div className="modal export-modal" role="dialog" aria-modal="true" aria-label="Export document">
+      <div className="modal export-modal" role="dialog" aria-modal="true" aria-label={t('common.exportTitle')}>
         <header className="modal-head">
           <div>
-            <h2>Export document</h2>
-            <p>Publication-grade output, generated locally.</p>
+            <h2>{t('common.exportTitle')}</h2>
+            <p>{t('common.publicationOutput')}</p>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} disabled={busy} title="Close">
+          <button type="button" className="icon-button" onClick={onClose} disabled={busy} title={t('common.close')}>
             <X size={18} />
           </button>
         </header>
@@ -121,16 +145,16 @@ export function ExportModal({ open, onClose, markdown, title, settings, getPrevi
                   key={item.id}
                   type="button"
                   className={`export-card ${format === item.id ? 'active' : ''}`}
-                  onClick={() => { setFormat(item.id); setResult(null); setError(null) }}
+                  onClick={() => { setFormat(item.id); setResult(null); setError(null); setNotice(null) }}
                   disabled={busy}
                 >
                   <span className="export-icon"><Icon size={19} /></span>
                   <span className="export-copy">
                     <span className="export-title-row">
-                      <strong>{item.label}</strong>
+                      <strong>{t(item.labelKey)}</strong>
                       <span className="export-badge">{item.badge}</span>
                     </span>
-                    <span>{item.detail}</span>
+                    <span>{t(item.detailKey)}</span>
                   </span>
                 </button>
               )
@@ -141,24 +165,25 @@ export function ExportModal({ open, onClose, markdown, title, settings, getPrevi
             <div className="export-result">
               <CheckCircle2 size={16} />
               <div>
-                <strong>Export complete</strong>
+                <strong>{t('common.exportComplete')}</strong>
                 <span title={result.path}>{result.path}</span>
               </div>
               <button type="button" onClick={() => void window.docflow.app.showItemInFolder(result.path)}>
-                Show in folder
+                {t('common.showInFolder')}
               </button>
             </div>
           )}
+          {notice && <div className="export-notice">{notice}</div>}
           {error && <div className="export-error">{error}</div>}
         </div>
 
         <footer className="modal-foot">
-          <span className="modal-note">Everything is rendered on this device.</span>
+          <span className="modal-note">{t('common.everythingLocal')}</span>
           <div className="modal-actions">
-            <button type="button" className="ghost-button" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="button" className="ghost-button" onClick={onClose} disabled={busy}>{t('common.cancel')}</button>
             <button type="button" className="primary-button" onClick={() => void runExport()} disabled={busy}>
               {busy ? <Loader2 size={15} className="spin" /> : <FileDown size={15} />}
-              {busy ? 'Exporting…' : 'Export'}
+              {busy ? t('common.exporting') : t('common.export')}
             </button>
           </div>
         </footer>

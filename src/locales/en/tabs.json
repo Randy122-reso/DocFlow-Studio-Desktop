@@ -1,0 +1,23 @@
+{
+  "tabs": "Tabs",
+  "close": "Close tab",
+  "closeOthers": "Close other tabs",
+  "closeRight": "Close tabs to the right",
+  "closeLeft": "Close tabs to the left",
+  "pin": "Pin tab",
+  "unpin": "Unpin tab",
+  "detach": "Move to new window",
+  "newTab": "New tab",
+  "untitled": "Untitled",
+  "maxTabsReached": "Maximum number of tabs reached",
+  "maxTabsDetail": "Close a tab before opening another one.",
+  "maxWindowsReached": "Maximum number of windows reached",
+  "maxWindowsDetail": "Close a window before detaching another tab.",
+  "pinnedTitle": "Pinned tab",
+  "pinnedMessage": "\"{{name}}\" is pinned. Unpin and close it?",
+  "unpinAndClose": "Unpin and Close",
+  "detached": "Tab moved to a new window",
+  "copyPath": "Copy full path",
+  "reveal": "Reveal in folder",
+  "dirty": "Unsaved changes"
+}

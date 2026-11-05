@@ -12,6 +12,15 @@ extraMetadata:
 asar: true
 compression: maximum
 artifactName: DocFlowStudio-${version}-${arch}.${ext}
+publish:
+  provider: github
+  owner: docflow
+  repo: studio-desktop
+  releaseUrl: https://github.com/docflow/studio-desktop/releases/latest
+  updateUrl: https://releases.docflow.app/updates/latest.yml
+  defaultBranch: main
+signingHashAlgorithms:
+  - sha256
 win:
   target:
     - target: nsis

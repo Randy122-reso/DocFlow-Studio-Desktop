@@ -1,35 +1,39 @@
 import { useEffect } from 'react'
-import { useFileStore, isDirty } from '../store/fileStore'
+import { useTabStore } from '../store/tabStore'
 
 export function useWindowTitle(): void {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
 
     const sync = () => {
-      const state = useFileStore.getState()
+      const state = useTabStore.getState()
+      if (!state.hydrated) return
+      const active = state.tabs.find((tab) => tab.id === state.activeTabId) ?? null
+      const dirty = state.tabs.some((tab) => tab.fileContent !== tab.savedContent)
+      const suffix = state.tabs.length > 1 ? ` (+${state.tabs.length - 1})` : ''
       void window.docflow.window
         .setDirty({
-          dirty: isDirty(state),
-          filePath: state.filePath,
-          fileName: state.fileName
+          dirty,
+          filePath: active?.filePath ?? null,
+          fileName: `${active?.displayName ?? 'Untitled'}${suffix}`
         })
         .catch(() => undefined)
     }
 
     sync()
-    const unsubscribe = useFileStore.subscribe((state, previous) => {
+    const unsubscribe = useTabStore.subscribe((state, previous) => {
       if (
-        state.content !== previous.content ||
-        state.savedContent !== previous.savedContent ||
-        state.filePath !== previous.filePath ||
-        state.fileName !== previous.fileName
+        state.tabs === previous.tabs ||
+        state.activeTabId === previous.activeTabId ||
+        state.hydrated !== previous.hydrated
       ) {
-        if (timer) clearTimeout(timer)
-        timer = setTimeout(() => {
-          timer = null
-          sync()
-        }, 50)
+        return
       }
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        timer = null
+        sync()
+      }, 50)
     })
 
     return () => {

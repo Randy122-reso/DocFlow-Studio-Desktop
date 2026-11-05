@@ -1,0 +1,11 @@
+{
+  "show": "Show DocFlow Studio",
+  "hide": "Hide DocFlow Studio",
+  "newTab": "New Tab",
+  "recent": "Recent Files",
+  "checkUpdates": "Check for Updates…",
+  "quit": "Quit DocFlow Studio",
+  "enabled": "Show tray icon",
+  "minimizeOnClose": "Minimize to tray when closing",
+  "startMinimized": "Start minimized (placeholder)"
+}

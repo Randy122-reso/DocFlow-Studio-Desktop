@@ -1,7 +1,9 @@
 import {
+  AppWindow,
   Braces,
   Download,
   FilePlus2,
+  FileSearch,
   FileText,
   Focus,
   FolderOpen,
@@ -10,8 +12,11 @@ import {
   SaveAll,
   Settings2
 } from 'lucide-react'
-import { useFileStore, useDirty } from '../store/fileStore'
+import { useTabStore } from '../store/tabStore'
+import { useFileStore } from '../store/fileStore'
+import { useI18n } from '../hooks/useI18n'
 import { RecentFilesMenu } from './RecentFilesMenu'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface TopNavProps {
   onNew(): void
@@ -27,13 +32,17 @@ interface TopNavProps {
   onPinRecent(path: string): void
   onRemoveRecent(path: string): void
   onClearRecent(): void
+  onNewWindow(): void
+  onFindInFiles(): void
 }
 
 export function TopNav(props: TopNavProps) {
-  const fileName = useFileStore((state) => state.fileName)
-  const filePath = useFileStore((state) => state.filePath)
+  const tabs = useTabStore((state) => state.tabs)
+  const activeTabId = useTabStore((state) => state.activeTabId)
   const recents = useFileStore((state) => state.recents)
-  const dirty = useDirty()
+  const { t } = useI18n()
+  const active = tabs.find((tab) => tab.id === activeTabId) ?? null
+  const dirty = active ? active.fileContent !== active.savedContent : false
 
   return (
     <header className="topbar">
@@ -53,23 +62,26 @@ export function TopNav(props: TopNavProps) {
         </div>
       </div>
 
-      <div className="document-identity" title={filePath ?? 'Not saved yet'}>
+      <div className="document-identity" title={active?.filePath ?? t('common.notSaved')}>
         <FileText size={14} />
-        <span className="document-name">{fileName}</span>
-        {dirty ? <span className="dirty-dot" title="Unsaved changes" /> : <span className="saved-dot" title="All changes saved" />}
+        <span className="document-name">{active?.displayName ?? t('tabs.untitled')}</span>
+        {dirty ? <span className="dirty-dot" title={t('tabs.dirty')} /> : <span className="saved-dot" title={t('common.saved')} />}
       </div>
 
       <div className="topbar-actions">
-        <button type="button" className="icon-button" title="New document (Ctrl+N)" onClick={props.onNew}>
+        <button type="button" className="icon-button" title={`${t('common.newTab')} (Ctrl+N)`} onClick={props.onNew}>
           <FilePlus2 size={17} />
         </button>
-        <button type="button" className="icon-button" title="Open document (Ctrl+O)" onClick={props.onOpen}>
+        <button type="button" className="icon-button" title={`${t('common.newWindow')} (Ctrl+Shift+N)`} onClick={props.onNewWindow}>
+          <AppWindow size={17} />
+        </button>
+        <button type="button" className="icon-button" title={`${t('common.open')} (Ctrl+O)`} onClick={props.onOpen}>
           <FolderOpen size={17} />
         </button>
-        <button type="button" className="icon-button save-button" title="Save (Ctrl+S)" onClick={props.onSave}>
+        <button type="button" className="icon-button save-button" title={`${t('common.save')} (Ctrl+S)`} onClick={props.onSave}>
           <Save size={17} />
         </button>
-        <button type="button" className="icon-button" title="Save As (Ctrl+Shift+S)" onClick={props.onSaveAs}>
+        <button type="button" className="icon-button" title={`${t('common.saveAs')} (Ctrl+Shift+S)`} onClick={props.onSaveAs}>
           <SaveAll size={17} />
         </button>
         <RecentFilesMenu
@@ -79,23 +91,27 @@ export function TopNav(props: TopNavProps) {
           onRemove={props.onRemoveRecent}
           onClear={props.onClearRecent}
         />
-        <span className="topbar-divider" />
-        <button type="button" className="text-button accent" title="Export (Ctrl+E)" onClick={props.onExport}>
-          <Download size={15} />
-          <span>Export</span>
+        <button type="button" className="icon-button" title={`${t('find.findInFiles')} (Ctrl+Shift+F)`} onClick={props.onFindInFiles}>
+          <FileSearch size={17} />
         </button>
-        <button type="button" className="icon-button" title="Toggle table of contents" onClick={props.onToggleToc}>
+        <span className="topbar-divider" />
+        <button type="button" className="text-button accent" title={`${t('common.export')} (Ctrl+E)`} onClick={props.onExport}>
+          <Download size={15} />
+          <span>{t('common.export')}</span>
+        </button>
+        <button type="button" className="icon-button" title={t('common.toc')} onClick={props.onToggleToc}>
           <PanelLeft size={17} />
         </button>
-        <button type="button" className="icon-button" title="Zen review (F11)" onClick={props.onZen}>
+        <button type="button" className="icon-button" title={`${t('common.zen')} (F11)`} onClick={props.onZen}>
           <Focus size={17} />
         </button>
-        <button type="button" className="icon-button" title="Code scripts" onClick={props.onCode}>
+        <button type="button" className="icon-button" title={t('common.code')} onClick={props.onCode}>
           <Braces size={17} />
         </button>
-        <button type="button" className="icon-button" title="Document settings" onClick={props.onSettings}>
+        <button type="button" className="icon-button" title={t('common.documentSettings')} onClick={props.onSettings}>
           <Settings2 size={17} />
         </button>
+        <LanguageSwitcher />
       </div>
     </header>
   )

@@ -57,6 +57,22 @@ export class DialogService {
     return assertSafePath(result.filePaths[0])
   }
 
+  async openDirectory(window: BrowserWindow | null): Promise<string | null> {
+    if (this.options.e2eMode) {
+      return this.options.e2eSavePath ?? null
+    }
+    const options: OpenDialogOptions = {
+      title: 'Choose a folder',
+      defaultPath: this.lastOpenedDir ?? app.getPath('documents'),
+      properties: ['openDirectory']
+    }
+    const result = window
+      ? await dialog.showOpenDialog(window, options)
+      : await dialog.showOpenDialog(options)
+    if (result.canceled || result.filePaths.length === 0) return null
+    return assertSafePath(result.filePaths[0])
+  }
+
   async saveFile(
     window: BrowserWindow | null,
     options: { defaultName: string; filters: FileFilter[] }

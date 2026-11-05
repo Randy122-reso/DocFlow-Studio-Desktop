@@ -1,0 +1,18 @@
+{
+  "generic": "Terjadi kesalahan",
+  "readFailed": "Berkas tidak dapat dibaca",
+  "writeFailed": "Berkas tidak dapat ditulis",
+  "invalidPath": "Path tersebut tidak diizinkan",
+  "ipcInvalid": "Aplikasi mengirim permintaan yang tidak valid",
+  "conflict": "Berkas berubah di disk",
+  "conflictDetail": "Pilih cara menyelesaikan konflik.",
+  "reload": "Muat ulang",
+  "overwrite": "Timpa",
+  "saveAs": "Simpan Sebagai",
+  "externalChange": "Perubahan eksternal terdeteksi",
+  "recoveryTitle": "Draf belum disimpan ditemukan",
+  "recoveryDetail": "Sesi sebelumnya tidak ditutup dengan bersih.",
+  "restore": "Pulihkan",
+  "discard": "Buang",
+  "openOriginal": "Buka Asli"
+}

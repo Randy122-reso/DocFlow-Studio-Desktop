@@ -86,6 +86,14 @@ export function registerFileHandlers(deps: FileHandlerDeps): void {
     return target ? { cancelled: false as const, path: target } : { cancelled: true as const }
   })
 
+  registerHandler('file:pickDirectory', null, deps.logger, async () => {
+    const target = await deps.dialogs.openDirectory(deps.getWindow())
+    if (!target) return { cancelled: true as const }
+    await deps.settings.set({ lastOpenedDir: target })
+    deps.dialogs.setLastOpenedDir(target)
+    return { cancelled: false as const, path: target }
+  })
+
   registerHandler('file:info', pathInputSchema, deps.logger, async ({ path }) => deps.fileService.info(path))
 
   registerHandler('file:exists', pathInputSchema, deps.logger, async ({ path }) => deps.fileService.exists(path))

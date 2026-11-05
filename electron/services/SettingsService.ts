@@ -9,8 +9,14 @@ const windowBoundsSchema = z.object({
   y: z.number().int().nullable()
 })
 
+const traySchema = z.object({
+  enabled: z.boolean(),
+  minimizeOnClose: z.boolean(),
+  startMinimized: z.boolean()
+})
+
 export const settingsSchema = z.object({
-  schemaVersion: z.number().int().min(1).max(999),
+  schemaVersion: z.literal(4),
   theme: z.enum(['modern', 'academic', 'minimal', 'editorial', 'legal']),
   fontSize: z.enum(['sm', 'md', 'lg']),
   fontFamily: z.enum(['sans', 'serif', 'display', 'mono']),
@@ -24,6 +30,10 @@ export const settingsSchema = z.object({
   windowBounds: windowBoundsSchema,
   lastOpenedDir: z.string().nullable(),
   lastExportDir: z.string().nullable(),
+  locale: z.enum(['auto', 'id', 'en']),
+  updateChannel: z.enum(['stable', 'beta']),
+  autoCheckUpdates: z.boolean(),
+  tray: traySchema,
   uiState: z.object({
     zoomLevel: z.number().int().min(50).max(200),
     isPagedMode: z.boolean(),
@@ -37,7 +47,7 @@ export const settingsSchema = z.object({
 })
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  schemaVersion: 1,
+  schemaVersion: 4,
   theme: 'modern',
   fontSize: 'md',
   fontFamily: 'sans',
@@ -51,6 +61,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
   windowBounds: { width: 1400, height: 900, x: null, y: null },
   lastOpenedDir: null,
   lastExportDir: null,
+  locale: 'auto',
+  updateChannel: 'stable',
+  autoCheckUpdates: true,
+  tray: {
+    enabled: true,
+    minimizeOnClose: false,
+    startMinimized: false
+  },
   uiState: {
     zoomLevel: 100,
     isPagedMode: true,
@@ -58,7 +76,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     syncScrollWithToc: true,
     viewMode: 'split',
     isTocVisible: true,
-    tocWidth: 240,
+    tocWidth: 280,
     toolbarScrollLeft: 0
   }
 }
@@ -68,6 +86,7 @@ export class SettingsService {
   private values: AppSettings = { ...DEFAULT_SETTINGS }
   private ready = false
   private timer: NodeJS.Timeout | null = null
+  private listeners = new Set<(settings: AppSettings) => void>()
 
   constructor(filePath: string) {
     this.filePath = filePath
@@ -75,15 +94,11 @@ export class SettingsService {
 
   async init(): Promise<void> {
     const stored = await readJsonFile<Record<string, unknown>>(this.filePath, {})
-    const patched = { ...stored }
-    if (!patched.uiState || typeof patched.uiState !== 'object') {
-      patched.uiState = DEFAULT_SETTINGS.uiState
-    }
-    const migrated = this.migrate(patched)
+    const migrated = this.migrate(stored)
     const parsed = settingsSchema.safeParse(migrated)
-    this.values = parsed.success ? parsed.data : { ...DEFAULT_SETTINGS }
+    this.values = parsed.success ? parsed.data : structuredClone(DEFAULT_SETTINGS)
     this.ready = true
-    if (!parsed.success || (stored as { schemaVersion?: number }).schemaVersion !== this.values.schemaVersion) {
+    if (!parsed.success || Number(stored.schemaVersion ?? 0) !== this.values.schemaVersion) {
       await this.persist()
     }
   }
@@ -96,6 +111,11 @@ export class SettingsService {
     return structuredClone(this.values[key])
   }
 
+  onChanged(listener: (settings: AppSettings) => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
   async set(patch: Partial<AppSettings>): Promise<AppSettings> {
     await this.ensureReady()
     const merged: AppSettings = {
@@ -104,7 +124,9 @@ export class SettingsService {
       windowBounds: patch.windowBounds
         ? { ...this.values.windowBounds, ...patch.windowBounds }
         : this.values.windowBounds,
-      schemaVersion: this.values.schemaVersion
+      tray: patch.tray ? { ...this.values.tray, ...patch.tray } : this.values.tray,
+      uiState: patch.uiState ? { ...this.values.uiState, ...patch.uiState } : this.values.uiState,
+      schemaVersion: 4
     }
     const parsed = settingsSchema.safeParse(merged)
     if (!parsed.success) {
@@ -112,14 +134,16 @@ export class SettingsService {
     }
     this.values = parsed.data
     this.schedulePersist()
+    for (const listener of this.listeners) listener(this.all())
     return this.all()
   }
 
   async reset(): Promise<AppSettings> {
     await this.ensureReady()
     const windowBounds = this.values.windowBounds
-    this.values = { ...DEFAULT_SETTINGS, windowBounds }
+    this.values = { ...structuredClone(DEFAULT_SETTINGS), windowBounds }
     await this.persist()
+    for (const listener of this.listeners) listener(this.all())
     return this.all()
   }
 
@@ -133,28 +157,19 @@ export class SettingsService {
 
   migrate(from: Record<string, unknown>): AppSettings {
     const source = from && typeof from === 'object' ? from : {}
-    const version = Number(source.schemaVersion ?? 0)
-    let migrated: Record<string, unknown> = { ...source }
-
-    if (version < 1) {
-      migrated = {
-        ...DEFAULT_SETTINGS,
-        ...migrated,
-        schemaVersion: 1,
-        windowBounds: {
-          ...DEFAULT_SETTINGS.windowBounds,
-          ...((source.windowBounds as Record<string, unknown>) ?? {})
-        }
-      }
-    }
+    const migrated: Record<string, unknown> = { ...source }
 
     return {
-      ...DEFAULT_SETTINGS,
+      ...structuredClone(DEFAULT_SETTINGS),
       ...migrated,
-      schemaVersion: 1,
+      schemaVersion: 4,
       windowBounds: {
         ...DEFAULT_SETTINGS.windowBounds,
         ...((migrated.windowBounds as Record<string, unknown>) ?? {})
+      },
+      tray: {
+        ...DEFAULT_SETTINGS.tray,
+        ...((migrated.tray as Record<string, unknown>) ?? {})
       },
       uiState: {
         ...DEFAULT_SETTINGS.uiState,

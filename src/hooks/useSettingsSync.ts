@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { AppSettings } from '../../electron/types/ipc'
 import { useFileStore } from '../store/fileStore'
 import { useUIStore } from '../store/uiStore'
+import { useAppSettingsStore } from '../store/appSettingsStore'
 import type { DocumentSettings } from '../types/document'
 
 const DOCUMENT_KEYS: Array<keyof DocumentSettings> = [
@@ -36,14 +37,21 @@ export function useSettingsSync(): void {
       .then((settings) => {
         if (!mounted) return
         useFileStore.getState().setSettings(pickDocumentSettings(settings))
+        useAppSettingsStore.getState().setSettings(settings)
         if (settings.uiState) useUIStore.getState().loadFromSettings(settings)
         hydrated.current = true
       })
       .catch(() => {
         hydrated.current = true
       })
+    const unsubscribe = window.docflow.settings.onChanged((settings) => {
+      if (!mounted) return
+      useAppSettingsStore.getState().setSettings(settings)
+      useFileStore.getState().setSettings(pickDocumentSettings(settings))
+    })
     return () => {
       mounted = false
+      unsubscribe()
     }
   }, [])
 

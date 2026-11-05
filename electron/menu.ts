@@ -1,19 +1,26 @@
 import { app, Menu, type MenuItemConstructorOptions } from 'electron'
-import type { RecentFile } from './types/ipc'
+import type { I18nService } from './services/I18nService'
+import type { Locale, RecentFile } from './types/ipc'
 
 export interface MenuContext {
   isDev: boolean
+  i18n: I18nService
   getRecent: () => RecentFile[]
   sendAction: (action: string, payload?: unknown) => void
   openRecent: (path: string) => void
   clearRecent: () => void
+  setLocale: (locale: Locale) => void
+  checkForUpdates: () => void
+  newWindow: () => void
+  quit: () => void
 }
 
 export function buildAppMenu(context: MenuContext): Menu {
+  const t = (key: string, vars?: Record<string, string | number>) => context.i18n.t(key, vars)
   const recent = context.getRecent()
   const recentItems: MenuItemConstructorOptions[] =
     recent.length === 0
-      ? [{ label: 'No recent documents', enabled: false }]
+      ? [{ label: t('menu.noRecent'), enabled: false }]
       : [
           ...recent.map((file) => ({
             label: file.pinned ? `📌 ${file.displayName}` : file.displayName,
@@ -21,8 +28,15 @@ export function buildAppMenu(context: MenuContext): Menu {
             click: () => context.openRecent(file.path)
           })),
           { type: 'separator' as const },
-          { label: 'Clear Recent', click: () => context.clearRecent() }
+          { label: t('menu.clearRecent'), click: () => context.clearRecent() }
         ]
+
+  const locale = context.i18n.getLocale()
+  const languageItems: MenuItemConstructorOptions[] = [
+    { label: t('menu.languageAuto'), type: 'radio', checked: locale === 'auto', click: () => context.setLocale('auto') },
+    { label: t('menu.languageEn'), type: 'radio', checked: locale === 'en', click: () => context.setLocale('en') },
+    { label: t('menu.languageId'), type: 'radio', checked: locale === 'id', click: () => context.setLocale('id') }
+  ]
 
   const template: MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin'
@@ -42,95 +56,64 @@ export function buildAppMenu(context: MenuContext): Menu {
         ]
       : []),
     {
-      label: 'File',
+      label: t('menu.file'),
       submenu: [
-        {
-          label: 'New',
-          accelerator: 'CmdOrCtrl+N',
-          click: () => context.sendAction('new')
-        },
-        {
-          label: 'Open…',
-          accelerator: 'CmdOrCtrl+O',
-          click: () => context.sendAction('open')
-        },
-        {
-          label: 'Open Recent',
-          submenu: recentItems
-        },
+        { label: t('menu.newTab'), accelerator: 'CmdOrCtrl+N', click: () => context.sendAction('newTab') },
+        { label: t('menu.newWindow'), accelerator: 'CmdOrCtrl+Shift+N', click: () => context.newWindow() },
+        { label: t('menu.open'), accelerator: 'CmdOrCtrl+O', click: () => context.sendAction('open') },
+        { label: t('menu.openRecent'), submenu: recentItems },
         { type: 'separator' },
-        {
-          label: 'Save',
-          accelerator: 'CmdOrCtrl+S',
-          click: () => context.sendAction('save')
-        },
-        {
-          label: 'Save As…',
-          accelerator: 'CmdOrCtrl+Shift+S',
-          click: () => context.sendAction('saveAs')
-        },
+        { label: t('menu.save'), accelerator: 'CmdOrCtrl+S', click: () => context.sendAction('save') },
+        { label: t('menu.saveAs'), accelerator: 'CmdOrCtrl+Shift+S', click: () => context.sendAction('saveAs') },
         { type: 'separator' },
-        {
-          label: 'Export…',
-          accelerator: 'CmdOrCtrl+E',
-          click: () => context.sendAction('export')
-        },
+        { label: t('menu.export'), accelerator: 'CmdOrCtrl+E', click: () => context.sendAction('export') },
         { type: 'separator' },
-        {
-          label: 'Reveal in File Explorer',
-          click: () => context.sendAction('reveal')
-        },
+        { label: t('menu.closeTab'), accelerator: 'CmdOrCtrl+W', click: () => context.sendAction('closeTab') },
+        { label: t('menu.reveal'), click: () => context.sendAction('reveal') },
         ...(process.platform === 'darwin'
           ? []
           : [
               { type: 'separator' as const },
-              {
-                label: 'Exit',
-                accelerator: 'Alt+F4',
-                click: () => context.sendAction('quit')
-              }
+              { label: t('menu.exit'), accelerator: 'Alt+F4', click: () => context.quit() }
             ])
       ]
     },
     {
-      label: 'Edit',
+      label: t('menu.edit'),
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
+        { label: t('menu.undo'), role: 'undo' },
+        { label: t('menu.redo'), role: 'redo' },
         { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' },
+        { label: t('menu.cut'), role: 'cut' },
+        { label: t('menu.copy'), role: 'copy' },
+        { label: t('menu.paste'), role: 'paste' },
+        { label: t('menu.selectAll'), role: 'selectAll' },
         { type: 'separator' },
+        { label: t('menu.find'), accelerator: 'CmdOrCtrl+F', click: () => context.sendAction('find') },
         {
-          label: 'Find in Editor',
-          accelerator: 'CmdOrCtrl+F',
-          click: () => context.sendAction('find')
-        }
+          label: t('menu.findInFiles'),
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: () => context.sendAction('findInFiles')
+        },
+        { label: t('menu.replace'), accelerator: 'CmdOrCtrl+H', click: () => context.sendAction('replace') }
       ]
     },
     {
-      label: 'View',
+      label: t('menu.view'),
       submenu: [
         {
-          label: 'Toggle Table of Contents',
+          label: t('menu.toggleToc'),
           accelerator: 'CmdOrCtrl+\\',
           click: () => context.sendAction('toggleToc')
         },
-        {
-          label: 'Zen Review',
-          accelerator: 'F11',
-          click: () => context.sendAction('zen')
-        },
-        {
-          label: 'Document Settings',
-          click: () => context.sendAction('settings')
-        },
+        { label: t('menu.zen'), accelerator: 'F11', click: () => context.sendAction('zen') },
+        { label: t('menu.settings'), click: () => context.sendAction('settings') },
         { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
+        { label: t('menu.language'), submenu: languageItems },
+        { type: 'separator' },
+        { label: t('menu.resetZoom'), role: 'resetZoom' },
+        { label: t('menu.zoomIn'), role: 'zoomIn' },
+        { label: t('menu.zoomOut'), role: 'zoomOut' },
         ...(context.isDev
           ? ([
               { type: 'separator' },
@@ -141,26 +124,23 @@ export function buildAppMenu(context: MenuContext): Menu {
       ]
     },
     {
-      label: 'Window',
-      submenu: [{ role: 'minimize' }, { role: 'zoom' }, ...(process.platform === 'darwin' ? [{ role: 'front' as const }] : [])]
+      label: t('menu.window'),
+      submenu: [
+        { label: t('menu.newWindow'), click: () => context.newWindow() },
+        { type: 'separator' },
+        { label: t('menu.minimize'), role: 'minimize' },
+        ...(process.platform === 'darwin' ? [{ role: 'front' as const }] : [])
+      ]
     },
     {
-      label: 'Help',
+      label: t('menu.help'),
       submenu: [
-        {
-          label: 'Keyboard Shortcuts',
-          accelerator: 'CmdOrCtrl+/',
-          click: () => context.sendAction('shortcuts')
-        },
-        {
-          label: 'User Guide',
-          click: () => context.sendAction('guide')
-        },
+        { label: t('menu.shortcuts'), accelerator: 'CmdOrCtrl+/', click: () => context.sendAction('shortcuts') },
+        { label: t('menu.userGuide'), click: () => context.sendAction('guide') },
         { type: 'separator' },
-        {
-          label: 'About DocFlow Studio',
-          click: () => app.showAboutPanel()
-        }
+        { label: t('menu.checkUpdates'), click: () => context.checkForUpdates() },
+        { type: 'separator' },
+        { label: t('menu.about'), click: () => app.showAboutPanel() }
       ]
     }
   ]

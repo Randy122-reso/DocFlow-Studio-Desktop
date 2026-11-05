@@ -1,5 +1,57 @@
 # Changelog
 
+## [1.6.0] — 2026-11-05
+
+Full v1.6 release: unified workspace (tabs & pinning), Find/Replace + Find in Files, auto-update &
+signing, i18n Bahasa Indonesia/Inggris, tray, multi-window detach, dan vector PDF export.
+
+### Added
+
+- **Unified Workspace & Tabs** (`src/store/tabStore.ts`, `src/hooks/useTabManager.ts`, `src/components/TabBar.tsx`):
+  multi-tab editor dengan tab bar, pin tab, ganti tab aktif, dan window title/dirty berbasis tab.
+  Session window schema **v5** dengan migrasi otomatis dari v4 (multi-tab legacy) dan draft v1
+  (single-draft). Draft bersih (clean) ikut dibersihkan; window tanpa tab tersisa di-drop.
+- **Find & Replace** (`src/hooks/useFindReplace.ts`, `src/hooks/useFindInFiles.ts`, `src/utils/searchRegex.ts`,
+  `src/components/FindReplaceBar.tsx`, `src/components/FindResultsPanel.tsx`, `src/components/FindInFilesPanel.tsx`):
+  mode normal/regex/extended, case, whole word, dot-matches-newline, wrap-around, in-selection,
+  extended Unicode escapes; riwayat pencarian per window; **Find in Files** lintas direktori via
+  `FileSearchService` + `fast-glob` dengan preview replace dan tulis-bersih (`dry-run` wajib).
+- **Auto-Update & Code Signing** (`electron/services/UpdateService.ts`, `electron/services/UpdateServiceProvider.ts`,
+  `src/hooks/useUpdate.ts`, `electron-builder.yml`, `scripts/gen-update-manifest.mjs`, `scripts/checksums.mjs`):
+  `electron-updater` di belakang `UpdateProvider` (DI); feed GitHub (`releases.docflow.app/updates/latest.yml`,
+  stable; beta: `.../beta/latest.yml`); `DOCFLOW_UPDATE_REQUIRE_SIGNATURE=true`; signing SHA-256;
+  auto-check 30 detik; update banner + restart-and-install.
+- **i18n** (`src/hooks/useI18n.ts`, `src/store/...`, namespaces `common/editor/find/tabs/update/tray/errors`):
+  `i18next` + `react-i18next`; locale `en`/`id`; auto-follow system locale dengan fallback Inggris;
+  LanguageSwitcher; label menu native & tray ter-translate.
+- **Tray** (`src/hooks/useTray.ts`, `electron/services/TrayService.ts`): show/hide, tooltip, menu tray.
+- **Multi-Window** (`electron/services/WindowManager.ts`, `src/hooks/useMultiWindow.ts`, `src/hooks/useTabPersistence.ts`):
+  `DOCFLOW_MAX_WINDOWS=5`, detach tab ke window baru, bounds persistence, close guard antar window.
+- **Vector PDF Export** (`src/utils/pdfExport.ts`, `src/components/ExportModal.tsx`): `pdf-lib` untuk
+  PDF vektor (teks tetap selectable & searchable); fallback raster `html2canvas` + `jsPDF`; error
+  `UnsupportedVectorGlyphError` untuk glyph di luar WinAnsi.
+- **Extended Unicode find** (`src/utils/searchRegex.ts`): decode extended escapes dan mode regex
+  dengan flag Unicode.
+
+### Changed
+
+- `package.json` version updated to `1.6.0`; scripts ditambah: `lint`, `gen:update-manifest`, `release`.
+- `electron-builder.yml` ditambah konfigurasi `publish` dan `signingHashAlgorithms: sha256`.
+- `.github/workflows/release.yml` ditambah step generate update manifest sebelum release.
+- `electron/services/SessionService.ts`: session schema v5 (windows-based) + migration v4 + legacy
+  draft; penulisan draft membersihkan window tanpa tab yang layak restore.
+- `README.md`, `CHANGELOG.md`, dan panduan (`docs/USER_GUIDE.md`, `docs/UPDATE_GUIDE.md`) diperbarui
+  untuk mencerminkan v1.6.
+
+### Tests
+
+- 105 unit test pass (`vitest run`), termasuk test layanan baru (`FileSearchService`, `UpdateService`,
+  `I18nService`) dan `pdfVector`, `SessionService`, `tabStore`, hooks-discipline.
+- `npm run typecheck` clean.
+- `npm run build && npm run verify` clean.
+
+---
+
 ## [1.5.0] — 2026-11-03
 
 Full v1.5 release: native context menu, toolbar overflow scroll, full UI state persistence (viewMode, TOC visibility/width, toolbar scroll), React hooks discipline audit, and complete desktop integration.
@@ -58,6 +110,7 @@ Beta release implementing the complete v1 design: native UI synchronization, too
 [0.1.0]: https://github.com/docflow/studio-desktop/releases/tag/v0.1.0
 [1.0.0]: https://github.com/docflow/studio-desktop/releases/tag/v1.0.0
 [1.5.0]: https://github.com/docflow/studio-desktop/releases/tag/v1.5.0
+[1.6.0]: https://github.com/docflow/studio-desktop/releases/tag/v1.6.0
 
 ---
 

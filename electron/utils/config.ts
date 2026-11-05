@@ -37,6 +37,22 @@ const envSchema = z.object({
   DOCFLOW_RECOVERY_INTERVAL_MS: numberFromEnv(5000, 500, 120000),
   DOCFLOW_RECENT_MAX: numberFromEnv(20, 1, 200),
   DOCFLOW_RECENT_TTL_DAYS: numberFromEnv(90, 1, 3650),
+  DOCFLOW_MAX_TABS: numberFromEnv(30, 1, 100),
+  DOCFLOW_MAX_WINDOWS: numberFromEnv(5, 1, 20),
+  DOCFLOW_FIND_HISTORY_MAX: numberFromEnv(20, 1, 100),
+  DOCFLOW_FIND_MAX_RESULTS: numberFromEnv(10000, 1, 100000),
+  DOCFLOW_FIND_IN_FILES_MAX_FILE_SIZE_MB: numberFromEnv(5, 1, 100),
+  DOCFLOW_FIND_IN_FILES_TIMEOUT_MS: numberFromEnv(5000, 100, 60000),
+  DOCFLOW_FIND_GLOB_DEFAULT: z.string().default('**/*.{md,markdown,txt}'),
+  DOCFLOW_DEFAULT_LOCALE: z.enum(['auto', 'id', 'en']).default('auto'),
+  DOCFLOW_UPDATE_CHANNEL: z.enum(['stable', 'beta']).default('stable'),
+  DOCFLOW_UPDATE_FEED_URL: z.string().default('https://releases.docflow.app/updates'),
+  DOCFLOW_UPDATE_CHECK_DELAY_MS: numberFromEnv(30000, 0, 3600000),
+  DOCFLOW_UPDATE_CHECK_INTERVAL_MS: numberFromEnv(3600000, 60000, 86400000),
+  DOCFLOW_UPDATE_REQUIRE_SIGNATURE: z.string().optional(),
+  DOCFLOW_TRAY_ENABLED: z.string().optional(),
+  DOCFLOW_TRAY_MINIMIZE_ON_CLOSE: z.string().optional(),
+  DOCFLOW_TRAY_START_MINIMIZED: z.string().optional(),
   DOCFLOW_CSP_ENABLED: booleanFromEnv,
   DOCFLOW_ALLOWED_EXTERNAL: z.string().default('github.com,www.github.com,wikipedia.org,www.wikipedia.org'),
   DOCFLOW_DEVTOOLS_ENABLED: booleanFromEnv,
@@ -56,11 +72,32 @@ export interface AppConfig {
   recoveryIntervalMs: number
   recentMax: number
   recentTtlDays: number
+  maxTabs: number
+  maxWindows: number
+  findHistoryMax: number
+  findMaxResults: number
+  findInFilesMaxFileSizeMb: number
+  findInFilesTimeoutMs: number
+  findGlobDefault: string
+  locale: 'auto' | 'id' | 'en'
+  updateChannel: 'stable' | 'beta'
+  updateFeedUrl: string
+  updateCheckDelayMs: number
+  updateCheckIntervalMs: number
+  updateRequireSignature: boolean
+  trayEnabled: boolean
+  trayMinimizeOnClose: boolean
+  trayStartMinimized: boolean
   cspEnabled: boolean
   allowedExternal: string[]
   devtoolsEnabled: boolean
   e2eMode: boolean
   e2eSavePath?: string
+}
+
+function optionalBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined || value === '') return fallback
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase())
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -82,6 +119,22 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     recoveryIntervalMs: value.DOCFLOW_RECOVERY_INTERVAL_MS,
     recentMax: value.DOCFLOW_RECENT_MAX,
     recentTtlDays: value.DOCFLOW_RECENT_TTL_DAYS,
+    maxTabs: value.DOCFLOW_MAX_TABS,
+    maxWindows: value.DOCFLOW_MAX_WINDOWS,
+    findHistoryMax: value.DOCFLOW_FIND_HISTORY_MAX,
+    findMaxResults: value.DOCFLOW_FIND_MAX_RESULTS,
+    findInFilesMaxFileSizeMb: value.DOCFLOW_FIND_IN_FILES_MAX_FILE_SIZE_MB,
+    findInFilesTimeoutMs: value.DOCFLOW_FIND_IN_FILES_TIMEOUT_MS,
+    findGlobDefault: value.DOCFLOW_FIND_GLOB_DEFAULT,
+    locale: value.DOCFLOW_DEFAULT_LOCALE,
+    updateChannel: value.DOCFLOW_UPDATE_CHANNEL,
+    updateFeedUrl: value.DOCFLOW_UPDATE_FEED_URL,
+    updateCheckDelayMs: value.DOCFLOW_UPDATE_CHECK_DELAY_MS,
+    updateCheckIntervalMs: value.DOCFLOW_UPDATE_CHECK_INTERVAL_MS,
+    updateRequireSignature: optionalBoolean(value.DOCFLOW_UPDATE_REQUIRE_SIGNATURE, true),
+    trayEnabled: optionalBoolean(value.DOCFLOW_TRAY_ENABLED, true),
+    trayMinimizeOnClose: optionalBoolean(value.DOCFLOW_TRAY_MINIMIZE_ON_CLOSE, false),
+    trayStartMinimized: optionalBoolean(value.DOCFLOW_TRAY_START_MINIMIZED, false),
     cspEnabled: value.DOCFLOW_CSP_ENABLED,
     allowedExternal: value.DOCFLOW_ALLOWED_EXTERNAL.split(',').map((host) => host.trim()).filter(Boolean),
     devtoolsEnabled: value.DOCFLOW_DEVTOOLS_ENABLED,

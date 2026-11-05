@@ -7,8 +7,13 @@ import type { SettingsService } from '../services/SettingsService'
 import type { SessionService } from '../services/SessionService'
 import type { DialogService } from '../services/DialogService'
 import type { OpenFileRouter } from '../services/OpenFileRouter'
-import type { WindowController } from '../window'
-import type { RecentFile } from '../types/ipc'
+import type { FileSearchService } from '../services/FileSearchService'
+import type { UpdateService } from '../services/UpdateService'
+import type { I18nService } from '../services/I18nService'
+import type { TrayService } from '../services/TrayService'
+import type { WindowManager } from '../services/WindowManager'
+import type { ContextMenuService } from '../services/ContextMenuService'
+import type { AppSettings, Locale, RecentFile, ResolvedLocale, SessionState } from '../types/ipc'
 import { registerFileHandlers } from './fileHandlers'
 import { registerRecentHandlers } from './recentHandlers'
 import { registerSettingsHandlers } from './settingsHandlers'
@@ -16,6 +21,10 @@ import { registerSessionHandlers } from './sessionHandlers'
 import { registerAppHandlers } from './appHandlers'
 import { registerWindowHandlers } from './windowHandlers'
 import { registerDialogHandlers } from './dialogHandlers'
+import { registerFindHandlers } from './findHandlers'
+import { registerUpdateHandlers } from './updateHandlers'
+import { registerI18nHandlers } from './i18nHandlers'
+import { registerTrayHandlers } from './trayHandlers'
 
 export interface IpcDependencies {
   config: AppConfig
@@ -27,9 +36,17 @@ export interface IpcDependencies {
   session: SessionService
   dialogs: DialogService
   router: OpenFileRouter
-  getWindow: () => Electron.BrowserWindow | null
-  getController: () => WindowController | null
+  fileSearch: FileSearchService
+  updates: UpdateService
+  i18n: I18nService
+  tray: TrayService
+  windows: WindowManager
+  contextMenu: ContextMenuService
+  getFocusedWindow: () => Electron.BrowserWindow | null
   onRecentChanged: (files: RecentFile[]) => void
+  onSessionSaved: (state: SessionState) => void
+  onSettingsChanged: (settings: AppSettings) => void
+  onLocaleChanged: (locale: Locale, resolved: ResolvedLocale) => void
 }
 
 export function registerIpc(deps: IpcDependencies): void {
@@ -40,7 +57,7 @@ export function registerIpc(deps: IpcDependencies): void {
     settings: deps.settings,
     config: deps.config,
     logger: deps.logger,
-    getWindow: deps.getWindow
+    getWindow: deps.getFocusedWindow
   })
   registerRecentHandlers({
     service: deps.recent,
@@ -49,25 +66,47 @@ export function registerIpc(deps: IpcDependencies): void {
   })
   registerSettingsHandlers({
     service: deps.settings,
-    logger: deps.logger
+    logger: deps.logger,
+    onChange: deps.onSettingsChanged
   })
   registerSessionHandlers({
     service: deps.session,
-    logger: deps.logger
+    logger: deps.logger,
+    onSaved: deps.onSessionSaved
   })
   registerAppHandlers({
     router: deps.router,
     dialogs: deps.dialogs,
+    contextMenu: deps.contextMenu,
     config: deps.config,
     logger: deps.logger
   })
   registerWindowHandlers({
-    getController: deps.getController,
+    manager: deps.windows,
     logger: deps.logger
   })
   registerDialogHandlers({
     dialogs: deps.dialogs,
     logger: deps.logger,
-    getWindow: deps.getWindow
+    getWindow: deps.getFocusedWindow
+  })
+  registerFindHandlers({
+    service: deps.fileSearch,
+    logger: deps.logger
+  })
+  registerUpdateHandlers({
+    service: deps.updates,
+    logger: deps.logger
+  })
+  registerI18nHandlers({
+    service: deps.i18n,
+    settings: deps.settings,
+    logger: deps.logger,
+    onChange: deps.onLocaleChanged
+  })
+  registerTrayHandlers({
+    tray: deps.tray,
+    windows: deps.windows,
+    logger: deps.logger
   })
 }

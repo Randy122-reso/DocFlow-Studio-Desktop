@@ -32,7 +32,7 @@ describe('SettingsService', () => {
     await service.init()
 
     const values = service.all()
-    expect(values.schemaVersion).toBe(1)
+    expect(values.schemaVersion).toBe(4)
     expect(values.theme).toBe('legal')
     expect(values.windowBounds).toEqual({ ...DEFAULT_SETTINGS.windowBounds, width: 1200 })
     expect(values.pageSize).toBe('A4')
@@ -63,8 +63,8 @@ describe('SettingsService', () => {
   it('ignores attempts to change the schema version', async () => {
     const service = new SettingsService(file)
     await service.init()
-    const values = await service.set({ schemaVersion: 99 })
-    expect(values.schemaVersion).toBe(1)
+    const values = await service.set({ schemaVersion: 99 } as never)
+    expect(values.schemaVersion).toBe(4)
   })
 
   it('persists changes and reloads them', async () => {

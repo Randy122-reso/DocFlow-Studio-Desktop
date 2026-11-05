@@ -1,0 +1,18 @@
+{
+  "checking": "Memeriksa pembaruan…",
+  "available": "Pembaruan v{{version}} tersedia",
+  "downloading": "Mengunduh pembaruan… {{progress}}%",
+  "ready": "Pembaruan v{{version}} siap",
+  "later": "Nanti",
+  "restart": "Mulai Ulang untuk Memperbarui",
+  "skip": "Lewati versi ini",
+  "download": "Unduh",
+  "error": "Pemeriksaan pembaruan gagal",
+  "retry": "Coba lagi",
+  "channel": "Saluran pembaruan",
+  "stable": "Stabil",
+  "beta": "Beta",
+  "autoCheck": "Periksa pembaruan secara otomatis",
+  "upToDate": "Aplikasi sudah versi terbaru",
+  "notAvailable": "Pembaruan hanya tersedia pada build terpaket"
+}

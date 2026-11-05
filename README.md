@@ -2,13 +2,14 @@
 
 **Markdown authoring & publication-grade export — native on Windows and Linux.**
 
-DocFlow Studio Desktop adalah aplikasi desktop untuk menulis dokumen Markdown dengan preview
-langsung, mengatur tata letak halaman, dan mengekspor ke DOCX, PDF, DOC, HTML, atau Markdown.
-Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim ke jaringan.
+DocFlow Studio Desktop adalah aplikasi desktop untuk menulis dokumen Markdown dengan preview langsung,
+mengatur tata letak halaman, dan mengekspor ke DOCX, PDF, DOC, HTML, atau Markdown. Semua pemrosesan
+dijalankan secara lokal; tidak ada konten dokumen yang dikirim ke jaringan.
 
-> **v1.5.0** — Native Context Menu, Toolbar Overflow Scroll, Full UI Persistence (viewMode, TOC width/visibility, toolbar scroll), React Hooks Discipline, dan integrasi desktop lengkap.
+> **v1.6.0** — Unified Workspace, Tabs & Pinning, Find/Replace + Find in Files, Auto-Update, i18n Bahasa
+> Indonesia/Inggris, Tray, Multi-Window, dan Vector PDF Export.
 
-![Status](https://img.shields.io/badge/status-1.5.0%20stable-10b981)
+![Status](https://img.shields.io/badge/status-1.6.0%20stable-10b981)
 ![Electron](https://img.shields.io/badge/Electron-33-2b2b2b)
 ![React](https://img.shields.io/badge/React-19-087ea4)
 ![License](https://img.shields.io/badge/license-MIT-2f855a)
@@ -23,19 +24,51 @@ Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim k
 - Preview aman (DOMPurify) dengan GitHub-flavored Markdown, tabel, task list, dan code block.
 - Dukungan **GitHub-style callouts** (`> [!NOTE]`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`).
 - Table of contents otomatis dengan ID heading unik dan navigasi klik.
-- Statistik dokumen: kata, karakter, kalimat, paragraf, heading, code block, link, gambar,
-  dan estimasi waktu baca.
-- Formatting toolbar lengkap: theme, font size, page size, margin, paged/continuous toggle, zoom controls, auto-scroll toggle, TOC sync toggle, dan copy Markdown.
+- Statistik dokumen: kata, karakter, kalimat, paragraf, heading, code block, link, gambar, dan estimasi
+  waktu baca.
+- Formatting toolbar lengkap: theme, font size, page size, margin, paged/continuous toggle, zoom
+  controls, auto-scroll toggle, TOC sync toggle, dan copy Markdown.
 - Zen Review untuk membaca dokumen tanpa distraksi.
 
-### Sinkronisasi UI & TOC
+### Workspace: Tabs & Pinning
 
-- **TOC Synchronization**: klik outline (TOC) untuk men-scroll editor dan preview secara bersamaan; dapat di-toggle ON/OFF.
-- **Auto-scroll**: saat mengetik di ujung editor, preview akan mengikuti scroll secara proporsional (toggle ON/OFF).
-- **Zoom preview**: 50%–200% dengan CSS transform; state tersimpan di `settings.json`.
-- **Paged / Continuous**: toggle tampilan halaman kartu atau aliran kontinyu.
-- **Copy Markdown**: salin seluruh isi editor ke clipboard dengan satu klik.
-- **UI State Persistence**: zoom, paged mode, auto-scroll, dan TOC sync tersimpan otomatis dan dipulihkan saat aplikasi dibuka ulang.
+- **Multi-tab editor**: tab bar dengan tombol baru, tutup, pin, dan ganti tab aktif.
+- Setiap tab membawa buffer, scroll position, cursor, dan dirty state sendiri.
+- **Pin tab** agar tidak diotomatis ditutup oleh close guard / auto-clean.
+- Window mengikuti tab aktif untuk menentukan judul & dirty indicator.
+- Session ditampung per **window** (schema v5) dengan migrasi otomatis dari format v4 (single-tab) dan
+  draft v1 (single-draft).
+
+### Find & Replace
+
+- **Find & Replace** di editor: mode *normal*, *regex*, *extended* (escape `\b`, `\n`, `\t`, unicode
+  escapes), *match case*, *whole word*, *dot matches newline*, *wrap around*, dan *in selection*.
+- **Find in Files**: cari berbasis teks lintas direktori (glob `**/*.{md,markdown,txt}`) dengan preview
+  ganti, hitung perubahan, lalu tulis ulang (`dry-run` wajib dikonfirmasi).
+- Riwayat pencarian (`findHistory`) dan opsi pencarian tersimpan per window.
+
+### Auto-Update & distribusi
+
+- Auto-update via `electron-updater` + feed GitHub (`https://releases.docflow.app/updates/latest.yml`,
+  stable; beta: `.../beta/latest.yml`).
+- Update memakai **signature SHA-256**; `DOCFLOW_UPDATE_REQUIRE_SIGNATURE=true` pada produksi.
+- Update banner, download progress, dan restart-and-install.
+- Manifest update dihasilkan otomatis lewat `npm run gen:update-manifest` (dipakai CI release).
+- Code signing dan checksum generation (`npm run checksums`) sudah disertifikasi.
+
+### i18n
+
+- Dukungan **Bahasa Indonesia dan Inggris** (`en` / `id`) melalui `i18next` + `react-i18next`.
+- Namespace: `common`, `editor`, `find`, `tabs`, `update`, `tray`, `errors`.
+- Bahasa sistem otomatis, dengan pengganti manual lewat Language Switcher.
+- Menu native dan label tray ikut ter-translate.
+
+### Tray & multi-window
+
+- **System tray**: show/hide, tooltip, dan entri menu aplikasi.
+- **Multi-window**: tombol *new window* (`Ctrl+Shift+N`) dengan batas maksimum 5 window
+  (`DOCFLOW_MAX_WINDOWS`), detach tab ke window baru, dan pengetatan bounds.
+- Single-instance dengan **file routing** dari OS ke window yang tepat.
 
 ### Tampilan dokumen
 
@@ -51,7 +84,7 @@ Semua pemrosesan dilakukan secara lokal; tidak ada konten dokumen yang dikirim k
 | --- | --- | --- |
 | **DOCX** | `docx` | Dokumen Word native dengan style, tabel, header/footer, nomor halaman. |
 | **PDF via Print** | Chromium print | Teks tetap selectable; membuka dialog print sistem. |
-| **Direct PDF** | `html2canvas` + `jsPDF` | Snapshot halaman, cocok untuk distribusi cepat; teks tidak selectable. |
+| **Direct PDF** | `pdf-lib` | **Vector PDF** native: teks tetap selectable dan dapat di-search; fallback raster (`html2canvas` + `jsPDF`) bila glyph tidak bisa di-encode WinAnsi. |
 | **DOC** | Word-compatible HTML | File `.doc` yang dapat dibuka Word/LibreOffice. |
 | **HTML** | Standalone HTML | Satu file mandiri dengan style tertanam. |
 | **Markdown** | Source | Sumber Markdown apa adanya. |
@@ -60,10 +93,7 @@ Semua dialog penyimpanan menggunakan native save dialog. Ekspor biner ditulis se
 
 ### Code block & script extraction
 
-- Deteksi bahasa dari fenced code block (30+ bahasa: TypeScript, JavaScript, Python, Java, C#,
-  C/C++, Go, Rust, Ruby, PHP, Swift, Kotlin, Scala, Dart, Lua, Perl, R, Julia, Haskell, Elixir,
-  Erlang, Clojure, Bash, PowerShell, SQL, HTML, CSS, SCSS, JSON, YAML, XML, Markdown, Dockerfile,
-  dan lainnya).
+- Deteksi bahasa dari fenced code block (30+ bahasa).
 - Modal Code Script: pilih blok, ganti/deteksi bahasa, copy, atau download sebagai file source.
 
 ### File & sesi
@@ -71,8 +101,7 @@ Semua dialog penyimpanan menggunakan native save dialog. Ekspor biner ditulis se
 - Open/save-in-place, Save As, dan file association `.md`, `.markdown`, `.txt`.
 - Recent files dengan pin, hapus satu entri, dan clear (pin dipertahankan).
 - Dirty tracking pada judul window dan close guard dengan pilihan Save / Discard / Cancel.
-- Auto-recovery draft setiap 1,5 detik saat mengetik (debounce) dan setiap 5 detik.
-- Deteksi perubahan file oleh program lain, dengan opsi reload atau tetap menulis.
+- Auto-recovery draft (debounce) dan deteksi perubahan file eksternal dengan opsi reload/rewrite.
 - Konflik mtime saat save: overwrite, reload, atau Save As.
 - Drag & drop file dari file manager.
 - Restore draft setelah crash/exit tak terduga.
@@ -81,9 +110,8 @@ Semua dialog penyimpanan menggunakan native save dialog. Ekspor biner ditulis se
 ### Desktop & keamanan
 
 - Native menu (File/Edit/View/Window/Help), recent files, dan keyboard shortcuts.
-- Single-instance; file yang dibuka dari OS diteruskan ke window yang sudah ada.
 - Renderer **sandboxed**: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
-- Preload API minimal melalui `contextBridge`; tidak ada akses Node langsung dari renderer.
+- Preload API minimal via `contextBridge`; tidak ada akses Node langsung dari renderer.
 - Semua IPC divalidasi dengan **zod**, termasuk path dan ukuran file.
 - Path traversal/null-byte ditolak; file ditulis atomik (temp file + rename + fsync).
 - CSP ketat di production; external link hanya untuk host yang di-allow-list.
@@ -97,11 +125,12 @@ Semua dialog penyimpanan menggunakan native save dialog. Ekspor biner ditulis se
 - **React 19 + TypeScript 5.7** — renderer.
 - **Vite 6 + electron-vite 3** — build main/preload/renderer.
 - **Zustand** — state management.
+- **i18next + react-i18next** — terjemahan ID/EN.
 - **marked + DOMPurify** — parsing dan sanitasi Markdown.
-- **docx, html2canvas, jsPDF** — export.
+- **pdf-lib, docx, html2canvas, jsPDF** — export.
 - **zod** — validasi IPC, settings, session.
 - **Vitest** — unit test.
-- **electron-builder** — NSIS installer, portable, AppImage, deb.
+- **electron-builder** — NSIS installer, portable, AppImage, deb, auto-update.
 
 ---
 
@@ -109,7 +138,6 @@ Semua dialog penyimpanan menggunakan native save dialog. Ekspor biner ditulis se
 
 - **Node.js >= 20.18** dan npm.
 - Windows 10/11 (utama) atau Linux x64.
-- Untuk packaging Windows dari Linux/macOS dibutuhkan Wine; Linux packaging sebaiknya dijalankan di Linux.
 
 ---
 
@@ -146,10 +174,13 @@ npm run verify
 | `npm test` | Jalankan seluruh unit test sekali. |
 | `npm run test:watch` | Unit test mode watch. |
 | `npm run verify` | Cek CSP, sandbox, dan tidak ada referensi dev server di output. |
+| `npm run lint` | ESLint (`react-hooks/rules-of-hooks: error`) + typescript-eslint. |
 | `npm run package` | Build + verify + installer Windows x64 (NSIS & portable) + SHA-256 checksums. |
 | `npm run package:linux` | Build + verify + AppImage & deb Linux x64 + SHA-256 checksums. |
 | `npm run checksums` | Buat `release/SHA256SUMS` dari artifact yang ada. |
 | `npm run icons` | Regenerasi `build/icon.png` dan `build/icon.ico`. |
+| `npm run gen:update-manifest` | Hasilkan manifest update `release/latest.yml` untuk auto-update. |
+| `npm run release` | Full release pipeline: build → verify → package → checksums → manifest. |
 
 ---
 
@@ -170,21 +201,22 @@ electron/
     DialogService.ts      native open/save/message dialogs
     RecentFilesService.ts recent files + pin + TTL
     SettingsService.ts    settings + migration + debounce persist
-    SessionService.ts     draft recovery
+    SessionService.ts     session v5 + draft recovery + migration v4
     OpenFileRouter.ts     file dari argv/second-instance
   utils/                  atomic write, encoding, logger, paths, config
 src/
   App.tsx                 orkestrasi aplikasi
-  components/             editor, viewer, TOC, modal, toast, status bar
-  hooks/                  file session, settings sync, shortcuts, title
-  store/                  Zustand store
-  utils/                  markdown, stats, export, editor actions
+  components/             editor, viewer, TOC, modal, toast, status bar, tab bar, find bar
+  hooks/                  useTabManager, useFindReplace, useFindInFiles, useUpdate,
+                          useI18n, useTray, useMultiWindow, useTabPersistence, ...
+  store/                  Zustand store (tabStore, searchStore, updateStore, appSettingsStore, ...)
+  utils/                  markdown, stats, export (vector PDF), editor actions, searchRegex
   styles/, types/         tema dan tipe renderer
-tests/unit/               unit test service & utility
-scripts/                  verify-build, icon generator
+tests/unit/               unit test service, hook, dan utility
+scripts/                  verify-build, icon generator, update manifest
 build/                    icon dan installer include
 out/                      output build (generated)
-release/                  output packaging (generated)
+release/                  output packaging & update manifest (generated)
 ```
 
 ---
@@ -196,9 +228,9 @@ Data aplikasi disimpan di folder `userData` Electron (biasanya
 
 | File | Isi |
 | --- | --- |
-| `settings.json` | Tema, tipografi, page setup, window bounds, last directory. |
+| `settings.json` | Tema, tipografi, page setup, window bounds, last directory, app preferences. |
 | `recent.json` | Recent files, pin, timestamp, ukuran. |
-| `session.json` | Draft pemulihan (hanya saat dokumen dirty). |
+| `session.json` | Session window (schema v5) + draft pemulihan (hanya saat dokumen dirty). |
 | `logs/main-YYYY-MM-DD.log` | Log rotasi (tanpa isi dokumen). |
 | `cache/` | Cache aplikasi. |
 
@@ -217,6 +249,7 @@ Salin `.env.example` ke `.env` bila perlu. Semua variabel opsional.
 | `DOCFLOW_LOG_MAX_FILES` | `10` | Jumlah file log yang disimpan. |
 | `DOCFLOW_LOG_MAX_SIZE_MB` | `20` | Ukuran maksimum sebelum rotasi. |
 | `DOCFLOW_MAX_FILE_SIZE_MB` | `50` | Batas ukuran file yang dibuka. |
+| `DOCFLOW_MAX_WINDOWS` | `5` | Maksimum window aktif. |
 | `DOCFLOW_ENCODING` | `utf-8` | Encoding default saat menulis file baru. |
 | `DOCFLOW_WATCH_DEBOUNCE_MS` | `250` | Debounce watcher perubahan eksternal. |
 | `DOCFLOW_AUTOSAVE_DEBOUNCE_MS` | `1500` | Debounce draft recovery. |
@@ -228,9 +261,10 @@ Salin `.env.example` ke `.env` bila perlu. Semua variabel opsional.
 | `DOCFLOW_DEVTOOLS_ENABLED` | `false` | DevTools pada build production. |
 | `DOCFLOW_E2E_MODE` | `false` | Dialog otomatis memakai `DOCFLOW_E2E_SAVE_PATH`. |
 | `DOCFLOW_E2E_SAVE_PATH` | — | Path tetap untuk mode E2E. |
+| `DOCFLOW_UPDATE_REQUIRE_SIGNATURE` | `true` | Wajibkan signature update (produksi). |
 
-\* CSP berbasis meta selalu ada di HTML production; `DOCFLOW_CSP_ENABLED` mengatur header CSP
-tambahan dari main process. Isi `.env.example` memakai `true` secara eksplisit.
+\* CSP berbasis meta selalu ada di HTML production; `DOCFLOW_CSP_ENABLED` mengatur header CSP tambahan
+dari main process.
 
 ---
 
@@ -253,14 +287,14 @@ tambahan dari main process. Isi `.env.example` memakai `true` secara eksplisit.
 npm test
 ```
 
-Saat ini terdapat **58 unit test** yang mencakup:
+Terdapat **105 unit test** yang mencakup:
 
-- `FileService` — read/write, konflik mtime, callback, binary read, path traversal.
-- `RecentFilesService` — dedupe, cap unpinned, pin, TTL, persistence, listener.
-- `SettingsService` — default, migrasi v0, validasi, merge bounds, reset, persistence.
-- `SessionService` — round-trip, clear, malformed draft.
-- `markdownParser` — heading ID unik, sanitasi XSS, callout, code block, ekstraksi fence.
-- `documentStats` — hitungan kata/kalimat/paragraf/heading/link/gambar, format bytes/waktu.
+- `FileService`, `RecentFilesService`, `SettingsService`, `SessionService`, `FileSearchService`, `UpdateService` — layanan backend.
+- `searchRegex` — mode normal/regex/extended, unicode escapes, match options.
+- `tabStore` — open/pin/hydrate/dirty derivation.
+- `markdownParser`, `documentStats` — parsing & statistik.
+- `pdfVector` — generate PDF vector via `pdf-lib`, validasi glyph WinAnsi.
+- Hooks discipline — `react-hooks/rules-of-hooks` regression via render test.
 
 `npm run verify` memeriksa output build: CSP meta, tidak ada URL dev server, dan tidak ada
 `nodeIntegration: true`/`unsafe-eval`.
@@ -278,24 +312,20 @@ npm run package:linux
 ```
 
 Output ada di `release/`. Konfigurasi ada di `electron-builder.yml`, termasuk file association
-`.md`, `.markdown`, dan `.txt`. `npm run package` juga menghasilkan `release/SHA256SUMS`.
+`.md`, `.markdown`, dan `.txt`, serta auto-update publish settings.
 
 > Build Linux sebaiknya dijalankan di Linux. Build Windows dari Linux/macOS memerlukan Wine.
-> Code signing dan auto-update belum dikonfigurasi pada tahap awal ini.
 
 ---
 
 ## Batasan tahap awal
 
-- **Direct PDF** adalah raster (html2canvas). Gunakan **PDF via Print** untuk teks selectable.
 - Paged preview adalah kartu halaman visual, bukan pagination CSS penuh per halaman.
-- DOCX dibuat dari parser Markdown internal; markup yang sangat kompleks (mis. HTML mentah,
-  nested table ekstrem) dapat disederhanakan.
-- Provider file bersifat lokal. Kontrak `FileProvider` sudah plug-and-play, tetapi provider cloud
-  belum diimplementasikan.
-- Auto-update, code signing, dan CI/CD release pipeline belum disertakan.
-- Build Linux belum diuji dari lingkungan Windows ini.
-- Migrasi database/state lintas versi besar belum diperlukan pada versi 0.1.0.
+- DOCX dibuat dari parser Markdown internal; markup yang sangat kompleks dapat disederhanakan.
+- Provider file bersifat lokal. Kontrak `FileProvider` sudah plug-and-play, tetapi provider cloud belum
+  diimplementasikan.
+- Auto-update memakai feed GitHub; feed custom `releases.docflow.app` perlu diarahkan DNS/CDN.
+- Migrasi state lintas versi besar belum diperlukan pada versi 1.x.
 
 ---
 
@@ -303,4 +333,5 @@ Output ada di `release/`. Konfigurasi ada di `electron-builder.yml`, termasuk fi
 
 MIT © 2026 DocFlow. Lihat [LICENSE](LICENSE).
 
-Dokumen panduan pengguna lengkap ada di [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
+Dokumentasi panduan pengguna lengkap ada di [docs/USER_GUIDE.md](docs/USER_GUIDE.md) dan
+[docs/UPDATE_GUIDE.md](docs/UPDATE_GUIDE.md).

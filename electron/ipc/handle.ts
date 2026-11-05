@@ -7,12 +7,12 @@ export function registerHandler<Input, Output>(
   channel: string,
   schema: z.ZodType<Input, z.ZodTypeDef, unknown> | null,
   logger: Logger,
-  handler: (input: Input) => Output | Promise<Output>
+  handler: (input: Input, event: Electron.IpcMainInvokeEvent) => Output | Promise<Output>
 ): void {
-  ipcMain.handle(channel, async (_event, payload: unknown) => {
+  ipcMain.handle(channel, async (event, payload: unknown) => {
     try {
       const input = schema ? schema.parse(payload) : (payload as Input)
-      return await handler(input)
+      return await handler(input, event)
     } catch (error) {
       const serialized = serializeError(error)
       logger.error(`IPC ${channel} failed`, serialized)
