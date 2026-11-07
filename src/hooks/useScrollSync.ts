@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react'
 import { useUIStore } from '../store/uiStore'
+import { DEFAULT_EDITOR_LINE_HEIGHT_PX } from '../components/DocumentEditor'
 import type { HeadingItem } from '../types/document'
 
 export function useScrollSync(editorRef: React.RefObject<HTMLTextAreaElement | null>, previewRef: React.RefObject<HTMLDivElement | null>) {
@@ -30,7 +31,8 @@ export function useScrollSync(editorRef: React.RefObject<HTMLTextAreaElement | n
         }
       }
       if (lineIndex >= 0) {
-        const lineHeight = parseFloat(window.getComputedStyle(editorEl).lineHeight) || 20
+        const lineHeight =
+          parseFloat(window.getComputedStyle(editorEl).lineHeight) || DEFAULT_EDITOR_LINE_HEIGHT_PX
         const scrollTop = Math.max(0, lineIndex * lineHeight - 40)
         editorEl.scrollTo({ top: scrollTop, behavior: 'smooth' })
         const pos = text.split('\n').slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0)

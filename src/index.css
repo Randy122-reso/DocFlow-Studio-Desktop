@@ -2,6 +2,10 @@
 @import "tailwindcss";
 
 :root {
+  /* Editor font metrics — shared by .editor-textarea and .editor-backdrop so
+     the highlight backdrop always mirrors the textarea exactly. */
+  --editor-line-height: 1.75;
+  --editor-gutter-width: 48px;
   --bg: #f1ece3;
   --surface: #fffdf8;
   --surface-2: #f8f4ec;
@@ -661,7 +665,7 @@ button:disabled {
   resize: none;
   background: transparent;
   padding: 26px 30px 120px;
-  line-height: 1.75;
+  line-height: var(--editor-line-height);
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
   font-size: 14px;
   color: #292524;
@@ -3504,7 +3508,7 @@ kbd {
      textarea's own slot. */
   top: 0;
   /* Align with the textarea: skip the gutter width */
-  left: 48px; /* matches .editor-gutter width */
+  left: var(--editor-gutter-width); /* matches .editor-gutter width */
   right: 10px; /* matches the reserved stable scrollbar gutter */
   bottom: 0;
   overflow: hidden;
@@ -3513,7 +3517,7 @@ kbd {
 
   /* Mirror textarea font metrics exactly */
   padding: 26px 30px 120px;
-  line-height: 1.75;
+  line-height: var(--editor-line-height);
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
   font-size: 14px;
   tab-size: 2;
@@ -3577,7 +3581,7 @@ mark.hl-bookmark-line {
 }
 
 .editor-gutter {
-  width: 48px;
+  width: var(--editor-gutter-width);
   flex-shrink: 0;
   background: rgba(246, 243, 234, 0.85);
   border-right: 1px solid var(--line);

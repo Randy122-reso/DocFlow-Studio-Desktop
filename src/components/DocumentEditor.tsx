@@ -43,6 +43,14 @@ interface DocumentEditorProps {
 // there are no bookmarks, which would trigger Zustand's snapshot loop check.
 const EMPTY_LINES: number[] = []
 
+/**
+ * Fallback line height in px used before the real computed value is measured.
+ * Kept in sync with `--editor-line-height` (1.75) × base font-size (14px)
+ * in index.css. Import this wherever a lineHeight fallback is needed so the
+ * gutter, the textarea and the scroll-sync maths never drift apart.
+ */
+export const DEFAULT_EDITOR_LINE_HEIGHT_PX = 24.5
+
 // ── Backdrop Segment Renderer ────────────────────────────────────────────────
 
 function SegmentSpan({ seg }: { seg: TextSegment }) {
@@ -119,7 +127,7 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
   const backdropRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const [lineHeightPx, setLineHeightPx] = useState(24.5)
+  const [lineHeightPx, setLineHeightPx] = useState(DEFAULT_EDITOR_LINE_HEIGHT_PX)
   const [currentLine, setCurrentLine] = useState(1)
   const [showBookmarkList, setShowBookmarkList] = useState(false)
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
