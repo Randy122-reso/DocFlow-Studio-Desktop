@@ -2,7 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { AlertTriangle, RefreshCw, X } from 'lucide-react'
 import type { FormatAction } from './utils/editorActions'
 import { applyFormatting } from './utils/editorActions'
-import { parseMarkdown, extractCodeBlocks } from './utils/markdownParser'
+import { extractCodeBlocks } from './utils/markdownParser'
 import { computeDocumentStats } from './utils/documentStats'
 import { useFileStore } from './store/fileStore'
 import { useTabStore } from './store/tabStore'
@@ -20,6 +20,7 @@ import { useMultiWindow } from './hooks/useMultiWindow'
 import { useUpdate } from './hooks/useUpdate'
 import { useI18n } from './hooks/useI18n'
 import { useFindReplace } from './hooks/useFindReplace'
+import { useMarkdownParser } from './hooks/useMarkdownParser'
 import { TopNav } from './components/TopNav'
 import { TabBar } from './components/TabBar'
 import { UpdateBanner } from './components/UpdateBanner'
@@ -46,9 +47,9 @@ function cursorFromOffset(content: string, offset: number): { line: number; colu
 }
 
 export default function App() {
-  const tabs = useTabStore((state) => state.tabs)
   const activeTabId = useTabStore((state) => state.activeTabId)
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null
+  const activeTab = useTabStore((state) => state.tabs.find((tab) => tab.id === state.activeTabId) ?? null)
+  const tabCount = useTabStore((state) => state.tabs.length)
   const content = activeTab?.fileContent ?? ''
   const fileName = activeTab?.displayName ?? 'Welcome.md'
   const filePath = activeTab?.filePath ?? null
@@ -59,7 +60,6 @@ export default function App() {
   const viewMode = useUIStore((state) => state.viewMode)
   const uiState = useUIStore()
 
-  useTabPersistence()
   const manager = useTabManager()
   const multiWindow = useMultiWindow()
   const { t } = useI18n()
@@ -85,13 +85,18 @@ export default function App() {
 
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Scroll positions live in refs while the user scrolls. They are only
+  // committed to the tab store when switching tabs or closing the window, so
+  // scrolling never re-renders App/DocumentEditor/DocumentViewer (SOLUSI.md #3).
+  const editorScrollRef = useRef(0)
+  const previewScrollRef = useRef(0)
+  const activeTabIdRef = useRef(activeTabId)
 
   const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
   const { findNext, findPrevious } = useFindReplace(editorRef)
   const bookmarkApi = useBookmarks(editorRef)
 
-  const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
+  const parsed = useMarkdownParser(deferredContent)
   const stats = useMemo(() => computeDocumentStats(content), [content])
   const codeBlocks = useMemo(() => extractCodeBlocks(content), [content])
 
@@ -384,46 +389,90 @@ export default function App() {
     const el = editorRef.current
     if (!el) return
     const onScroll = () => {
+      editorScrollRef.current = el.scrollTop
       handleEditorScroll()
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
-      scrollTimerRef.current = setTimeout(() => {
-        scrollTimerRef.current = null
-        const id = useTabStore.getState().activeTabId
-        if (id) useTabStore.getState().updateTab(id, { editorScrollTop: el.scrollTop })
-      }, 180)
     }
     el.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      el.removeEventListener('scroll', onScroll)
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current)
-        scrollTimerRef.current = null
-      }
-    }
+    return () => el.removeEventListener('scroll', onScroll)
   }, [handleEditorScroll])
 
   useEffect(() => {
-    const tab = useTabStore.getState().getTab(useTabStore.getState().activeTabId ?? '')
-    if (!tab) return
+    const currentTabId = useTabStore.getState().activeTabId ?? ''
+    const previousTabId = activeTabIdRef.current
+    const tab = useTabStore.getState().getTab(currentTabId)
+
+    // When the active tab actually changes, commit the live scroll offsets of
+    // the tab we are leaving into its store entry before applying the new tab.
+    if (previousTabId && previousTabId !== currentTabId) {
+      useTabStore.getState().updateTab(previousTabId, {
+        editorScrollTop: editorScrollRef.current,
+        previewScrollTop: previewScrollRef.current
+      })
+    }
+    activeTabIdRef.current = currentTabId
+
+    if (tab) {
+      editorScrollRef.current = tab.editorScrollTop
+      previewScrollRef.current = tab.previewScrollTop
+      const frame = requestAnimationFrame(() => {
+        const editor = editorRef.current
+        if (editor) {
+          editor.scrollTop = tab.editorScrollTop
+          editorScrollRef.current = editor.scrollTop
+          const start = Math.min(tab.cursorOffset, editor.value.length)
+          const end = Math.min(Math.max(tab.selectionEnd, start), editor.value.length)
+          editor.setSelectionRange(start, end)
+        }
+        const preview = previewRef.current
+        if (preview) {
+          preview.scrollTop = tab.previewScrollTop
+          previewScrollRef.current = preview.scrollTop
+        }
+      })
+      const position = cursorFromOffset(tab.fileContent, tab.cursorOffset)
+      setCursor({
+        line: position.line,
+        column: position.column,
+        selection: Math.max(0, tab.selectionEnd - tab.cursorOffset)
+      })
+      return () => cancelAnimationFrame(frame)
+    }
+  }, [activeTabId])
+
+  // Flush the live scroll offsets when the window is closing so session
+  // persistence picks them up even though they are no longer in the store.
+  useEffect(() => {
+    const flushScrollOffsets = () => {
+      const id = useTabStore.getState().activeTabId
+      if (!id) return
+      useTabStore.getState().updateTab(id, {
+        editorScrollTop: editorScrollRef.current,
+        previewScrollTop: previewScrollRef.current
+      })
+    }
+    window.addEventListener('beforeunload', flushScrollOffsets)
+    return () => window.removeEventListener('beforeunload', flushScrollOffsets)
+  }, [])
+
+  // Registered after the scroll flush above so `beforeunload` handlers run in
+  // the right order: live offsets land in the store first, then the session is
+  // serialised with up-to-date scroll positions.
+  useTabPersistence()
+
+  const handlePreviewScrollTop = useCallback((top: number) => {
+    previewScrollRef.current = top
+  }, [])
+
+  // Panes unmount/remount when the view mode changes. Restore their offsets
+  // from the refs (not the store) so switching editor ↔ split ↔ preview keeps
+  // the reader exactly where they left off.
+  useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      const editor = editorRef.current
-      if (editor) {
-        editor.scrollTop = tab.editorScrollTop
-        const start = Math.min(tab.cursorOffset, editor.value.length)
-        const end = Math.min(Math.max(tab.selectionEnd, start), editor.value.length)
-        editor.setSelectionRange(start, end)
-      }
-      const preview = previewRef.current
-      if (preview) preview.scrollTop = tab.previewScrollTop
-    })
-    const position = cursorFromOffset(tab.fileContent, tab.cursorOffset)
-    setCursor({
-      line: position.line,
-      column: position.column,
-      selection: Math.max(0, tab.selectionEnd - tab.cursorOffset)
+      if (editorRef.current) editorRef.current.scrollTop = editorScrollRef.current
+      if (previewRef.current) previewRef.current.scrollTop = previewScrollRef.current
     })
     return () => cancelAnimationFrame(frame)
-  }, [activeTabId])
+  }, [viewMode])
 
   const focusHeading = useCallback(
     (id: string) => {
@@ -601,10 +650,7 @@ export default function App() {
                 settings={settings}
                 zoomLevel={uiState.zoomLevel}
                 isPagedMode={uiState.isPagedMode}
-                onScrollTop={(top) => {
-                  const id = useTabStore.getState().activeTabId
-                  if (id) useTabStore.getState().updateTab(id, { previewScrollTop: top })
-                }}
+                onScrollTop={handlePreviewScrollTop}
               />
             )}
           </div>
@@ -618,7 +664,7 @@ export default function App() {
         lineEnding={activeTab?.lineEnding ?? 'lf'}
         cursor={cursor}
         stats={stats}
-        tabCount={tabs.length}
+        tabCount={tabCount}
         windowCount={windowCount}
         zoomLevel={uiState.zoomLevel}
       />

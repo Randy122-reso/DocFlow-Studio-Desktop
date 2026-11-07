@@ -97,9 +97,8 @@ export interface ParsedMarkdown {
   headings: HeadingItem[]
 }
 
-export function parseMarkdown(markdown: string): ParsedMarkdown {
+export function parseHtml(raw: string): ParsedMarkdown {
   installSanitizerHook()
-  const raw = marked.parse(markdown, { async: false }) as string
   const clean = DOMPurify.sanitize(raw, {
     ADD_ATTR: ['target', 'rel', 'checked', 'disabled', 'type'],
     ADD_TAGS: ['input']
@@ -108,6 +107,11 @@ export function parseMarkdown(markdown: string): ParsedMarkdown {
   const headingResult = transformHeadings(withCallouts)
   const html = transformCodeBlocks(headingResult.html)
   return { html, headings: headingResult.headings }
+}
+
+export function parseMarkdown(markdown: string): ParsedMarkdown {
+  const raw = marked.parse(markdown, { async: false }) as string
+  return parseHtml(raw)
 }
 
 export function extractCodeBlocks(markdown: string): CodeBlockItem[] {

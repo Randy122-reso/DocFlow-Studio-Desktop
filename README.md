@@ -6,10 +6,11 @@ DocFlow Studio Desktop adalah aplikasi desktop untuk menulis dokumen Markdown de
 mengatur tata letak halaman, dan mengekspor ke DOCX, PDF, DOC, HTML, atau Markdown. Semua pemrosesan
 dijalankan secara lokal; tidak ada konten dokumen yang dikirim ke jaringan.
 
-> **v1.6.0** — Unified Workspace, Tabs & Pinning, Find/Replace + Find in Files, Auto-Update, i18n Bahasa
-> Indonesia/Inggris, Tray, Multi-Window, dan Vector PDF Export.
+> **v1.6.2** — Unified Workspace, Tabs & Pinning, Find/Replace + Find in Files, Auto-Update, i18n Bahasa
+> Indonesia/Inggris, Tray, Multi-Window, Vector PDF Export, plus the full `SOLUSI.md` scroll-performance
+> patch (imperative gutter scrolling, layout zoom, content-visibility, ref-based scroll persistence).
 
-![Status](https://img.shields.io/badge/status-1.6.0%20stable-10b981)
+![Status](https://img.shields.io/badge/status-1.6.2%20stable-10b981)
 ![Electron](https://img.shields.io/badge/Electron-33-2b2b2b)
 ![React](https://img.shields.io/badge/React-19-087ea4)
 ![License](https://img.shields.io/badge/license-MIT-2f855a)
@@ -116,6 +117,22 @@ Semua dialog penyimpanan menggunakan native save dialog. Ekspor biner ditulis se
 - Path traversal/null-byte ditolak; file ditulis atomik (temp file + rename + fsync).
 - CSP ketat di production; external link hanya untuk host yang di-allow-list.
 - Log rotasi tanpa pernah menulis isi dokumen.
+
+### Performance & arsitektur render (v1.6.2)
+
+Perbaikan dari `SOLUSI.md` untuk menghilangkan lag saat mengetik/scroll dan highlight yang meleset:
+
+- **Selective Zustand subscriptions** — `App.tsx` tidak lagi berlangganan seluruh array `tabs`;
+  hanya `activeTabId`, tab aktif, dan `tabCount`. Perubahan tab lain tidak memicu re-render shell.
+- **Debounced/throttled scroll** — preview menyimpan `previewScrollTop` 150 ms setelah scroll berhenti;
+  editor memakai `requestAnimationFrame` untuk paint dan debounce 180 ms untuk persistensi.
+- **Memoized editor metrics** — `split('\n')`, rentang baris terlihat, dan spacer dihitung dalam
+  `useMemo`; tinggi baris gutter dibaca dari `getComputedStyle` sehingga selalu akurat.
+- **Debounced search highlight** — query pencarian di-debounce 300 ms sebelum `findAll` dijalankan.
+- **Web Worker Markdown** — `marked` berjalan di `src/workers/markdownWorker.ts`; sanitasi DOMPurify
+  dan transform heading/callout/code-block tetap di main thread via `parseHtml`.
+- **Overlay alignment** — `scrollbar-gutter: stable` + inset backdrop yang sama menjaga highlight
+  sejajar dengan wrap teks textarea.
 
 ---
 
@@ -287,7 +304,7 @@ dari main process.
 npm test
 ```
 
-Terdapat **105 unit test** yang mencakup:
+Terdapat **132 unit test** yang mencakup:
 
 - `FileService`, `RecentFilesService`, `SettingsService`, `SessionService`, `FileSearchService`, `UpdateService` — layanan backend.
 - `searchRegex` — mode normal/regex/extended, unicode escapes, match options.

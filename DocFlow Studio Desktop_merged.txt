@@ -1,529 +1,2224 @@
 --- GENERATED OUTPUT ---
 Source: D:\DocFlow Studio Desktop
-Date: 2026-11-05 20:06:14
+Date: 2026-11-07 10:57:33
 ================================================================================
 
-📁 DIRECTORY STRUCTURE (Specific paths: 8 file(s))
+📁 DIRECTORY STRUCTURE (Specific paths: 7 file(s))
 ==================================================
 └── src
-    └── locales
-        ├── en
-        │   ├── common.json
-        │   ├── editor.json
-        │   ├── find.json
-        │   └── tabs.json
-        ├── id
-        │   ├── common.json
-        │   ├── editor.json
-        │   └── find.json
-        └── index.ts
+    ├── App.tsx
+    ├── components
+    │   ├── DocumentEditor.tsx
+    │   ├── DocumentViewer.tsx
+    │   └── FindReplaceBar.tsx
+    ├── hooks
+    │   ├── useFindReplace.ts
+    │   └── useScrollSync.ts
+    └── store
+        └── tabStore.ts
 
 ================================================================================
 
 📄 FILE CONTENTS
 ==================================================
 
---- START: src/locales/en/common.json ---
+--- START: src/App.tsx ---
 --------------------------------------------------------------------------------
-{
-  "appName": "DocFlow Studio",
-  "save": "Save",
-  "saveAs": "Save As",
-  "open": "Open",
-  "openRecent": "Open Recent",
-  "new": "New",
-  "newTab": "New Tab",
-  "newWindow": "New Window",
-  "export": "Export",
-  "settings": "Settings",
-  "zen": "Zen Review",
-  "code": "Code Scripts",
-  "toc": "Table of Contents",
-  "close": "Close",
-  "cancel": "Cancel",
-  "ok": "OK",
-  "copy": "Copy",
-  "copied": "Copied",
-  "saved": "Saved",
-  "unsaved": "Unsaved",
-  "notSaved": "Not saved yet",
-  "words": "words",
-  "chars": "chars",
-  "selected": "selected",
-  "line": "Ln",
-  "column": "Col",
-  "markdown": "Markdown",
-  "showInFolder": "Show in folder",
-  "exportComplete": "Export complete",
-  "exporting": "Exporting…",
-  "everythingLocal": "Everything is rendered on this device.",
-  "publicationOutput": "Publication-grade output, generated locally.",
-  "exportTitle": "Export document",
-  "language": "Language",
-  "auto": "Automatic",
-  "english": "English",
-  "indonesian": "Bahasa Indonesia",
-  "quit": "Quit",
-  "dropToOpen": "Drop to open",
-  "dropHint": "Markdown, text, or any readable document",
-  "documentSettings": "Document settings",
-  "shortcuts": "Keyboard Shortcuts",
-  "userGuide": "User Guide",
-  "checkUpdates": "Check for Updates",
-  "draftRestored": "Draft restored",
-  "draftDiscarded": "Draft discarded",
-  "draftRestoredDetail": "Review the content and save when ready.",
-  "draftDiscardedDetail": "The recovery copy was removed.",
-  "newDocument": "New document",
-  "newDocumentDetail": "Start writing — Ctrl+S will choose a location.",
-  "openFailed": "This file cannot be opened",
-  "openFailedDetail": "Drag a Markdown file from your file manager.",
-  "saveFirst": "Save the document first",
-  "saveFirstDetail": "There is no file on disk yet.",
-  "externalChange": "{{name}} was changed by another program.",
-  "reloadFromDisk": "Reload from disk",
-  "keepEditing": "Keep editing",
-  "dismiss": "Dismiss",
-  "previewUnavailable": "The preview is not available",
-  "writeFailed": "The export could not be saved",
-  "saving": "Saving…",
-  "windows": "windows",
-  "settingsSubtitle": "Typography, page and application preferences.",
-  "themeSection": "Theme",
-  "typographySection": "Typography",
-  "pageSection": "Page",
-  "optionsSection": "Options",
-  "applicationSection": "Application",
-  "applicationDetail": "Language, updates and desktop behaviour.",
-  "headerFooter": "Header & footer",
-  "headerFooterDetail": "Show document title and export date on the page.",
-  "pageNumbers": "Page numbers",
-  "pageNumbersDetail": "Include a page number in the footer.",
-  "numberHeadings": "Number headings",
-  "numberHeadingsDetail": "Prefix H2+ headings with hierarchical numbers.",
-  "justifyText": "Justify text",
-  "justifyTextDetail": "Align paragraphs to both margins.",
-  "resetDefaults": "Reset defaults",
-  "done": "Done",
-  "languageHint": "Interface language. Automatic follows the operating system.",
-  "updatesSection": "Updates",
-  "updatesDetail": "Choose a release channel and automatic checks.",
-  "traySection": "System tray",
-  "trayDetail": "Control the tray icon and closing behaviour.",
-  "exportDocx": "Word Document",
-  "exportDocxDetail": "Native .docx with styles, tables and page numbers.",
-  "exportVector": "PDF — Vector",
-  "exportVectorDetail": "Selectable text and compact size (default).",
-  "exportRaster": "PDF — Raster",
-  "exportRasterDetail": "Pixel-perfect snapshot for complex layouts.",
-  "exportPrint": "PDF via Print",
-  "exportPrintDetail": "Selectable text, opens the system print dialog.",
-  "exportDoc": "Word HTML",
-  "exportDocDetail": "Legacy .doc that opens in Word and LibreOffice.",
-  "exportHtml": "Standalone HTML",
-  "exportHtmlDetail": "Self-contained page with embedded styles.",
-  "exportMarkdown": "Markdown",
-  "exportMarkdownDetail": "Plain source file, byte-for-byte.",
-  "vectorFallback": "Vector PDF cannot encode \"{{glyph}}\" — exported as raster instead."
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { AlertTriangle, RefreshCw, X } from 'lucide-react'
+import type { FormatAction } from './utils/editorActions'
+import { applyFormatting } from './utils/editorActions'
+import { parseMarkdown, extractCodeBlocks } from './utils/markdownParser'
+import { computeDocumentStats } from './utils/documentStats'
+import { useFileStore } from './store/fileStore'
+import { useTabStore } from './store/tabStore'
+import { useSearchStore } from './store/searchStore'
+import { useUIStore } from './store/uiStore'
+import { useRecentFiles } from './hooks/useRecentFiles'
+import { useSettingsSync } from './hooks/useSettingsSync'
+import { useWindowTitle } from './hooks/useWindowTitle'
+import { useBookmarks } from './hooks/useBookmarks'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useScrollSync } from './hooks/useScrollSync'
+import { useTabManager } from './hooks/useTabManager'
+import { useTabPersistence } from './hooks/useTabPersistence'
+import { useMultiWindow } from './hooks/useMultiWindow'
+import { useUpdate } from './hooks/useUpdate'
+import { useI18n } from './hooks/useI18n'
+import { useFindReplace } from './hooks/useFindReplace'
+import { TopNav } from './components/TopNav'
+import { TabBar } from './components/TabBar'
+import { UpdateBanner } from './components/UpdateBanner'
+import { FormattingToolbar } from './components/FormattingToolbar'
+import { FindReplaceBar } from './components/FindReplaceBar'
+import { FindResultsPanel } from './components/FindResultsPanel'
+import { FindInFilesPanel } from './components/FindInFilesPanel'
+import { DocumentEditor } from './components/DocumentEditor'
+import { DocumentViewer } from './components/DocumentViewer'
+import { TableOfContents } from './components/TableOfContents'
+import { StatusBar } from './components/StatusBar'
+import { DocumentSettingsPanel } from './components/DocumentSettingsPanel'
+import { ExportModal } from './components/ExportModal'
+import { ZenReviewModal } from './components/ZenReviewModal'
+import { CodeScriptModal } from './components/CodeScriptModal'
+import { ConflictDialog } from './components/ConflictDialog'
+import { ShortcutHelpModal } from './components/ShortcutHelpModal'
+import { Toast } from './components/Toast'
+
+function cursorFromOffset(content: string, offset: number): { line: number; column: number } {
+  const before = content.slice(0, Math.max(0, Math.min(offset, content.length)))
+  const lines = before.split('\n')
+  return { line: lines.length, column: (lines[lines.length - 1]?.length ?? 0) + 1 }
 }
 
---------------------------------------------------------------------------------
---- END: src/locales/en/common.json ---
+export default function App() {
+  const tabs = useTabStore((state) => state.tabs)
+  const activeTabId = useTabStore((state) => state.activeTabId)
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null
+  const content = activeTab?.fileContent ?? ''
+  const fileName = activeTab?.displayName ?? 'Welcome.md'
+  const filePath = activeTab?.filePath ?? null
+  const dirty = activeTab ? activeTab.fileContent !== activeTab.savedContent : false
 
---- START: src/locales/en/editor.json ---
---------------------------------------------------------------------------------
-{
-  "bold": "Bold",
-  "italic": "Italic",
-  "strike": "Strikethrough",
-  "inlineCode": "Inline code",
-  "codeBlock": "Code block",
-  "link": "Link",
-  "image": "Image",
-  "bullet": "Bullet list",
-  "numbered": "Numbered list",
-  "task": "Task list",
-  "hr": "Horizontal rule",
-  "h1": "Heading 1",
-  "h2": "Heading 2",
-  "h3": "Heading 3",
-  "quote": "Blockquote",
-  "table": "Table",
-  "theme": "Theme",
-  "fontSize": "Font size",
-  "fontFamily": "Font family",
-  "pageSize": "Page size",
-  "margin": "Margin",
-  "margins": "Margins",
-  "paperTone": "Paper tone",
-  "paged": "Paged mode",
-  "continuous": "Continuous mode",
-  "autoScroll": "Auto-scroll",
-  "syncToc": "Sync TOC scroll",
-  "copyMarkdown": "Copy Markdown",
-  "zoomIn": "Zoom in",
-  "zoomOut": "Zoom out",
-  "resetZoom": "Reset zoom",
-  "editorOnly": "Editor only",
-  "split": "Split",
-  "previewOnly": "Preview only",
-  "formatting": "Formatting",
-  "documentStyle": "Document style",
-  "viewToggles": "View toggles",
-  "zoom": "Zoom",
-  "viewMode": "View mode"
-}
+  const settings = useFileStore((state) => state.settings)
+  const setViewMode = useUIStore((state) => state.setUIState)
+  const viewMode = useUIStore((state) => state.viewMode)
+  const uiState = useUIStore()
 
---------------------------------------------------------------------------------
---- END: src/locales/en/editor.json ---
+  useTabPersistence()
+  const manager = useTabManager()
+  const multiWindow = useMultiWindow()
+  const { t } = useI18n()
+  useUpdate()
+  useRecentFiles()
+  useSettingsSync()
+  useWindowTitle()
 
---- START: src/locales/en/find.json ---
---------------------------------------------------------------------------------
-{
-  "find": "Find",
-  "replace": "Replace",
-  "findInFiles": "Find in Files",
-  "findPlaceholder": "Find in document…",
-  "replacePlaceholder": "Replace with…",
-  "matchCase": "Match case",
-  "wholeWord": "Whole word",
-  "modeNormal": "Normal",
-  "modeExtended": "Extended",
-  "modeRegex": "Regex",
-  "unicodeEscapes": "Unicode escapes",
-  "dotNewline": "Dot matches newline",
-  "wrapAround": "Wrap around",
-  "inSelection": "In selection",
-  "backward": "Backward",
-  "findNext": "Find next",
-  "findPrevious": "Find previous",
-  "replaceOne": "Replace",
-  "replaceAll": "Replace All",
-  "findInTabs": "Find All in Tabs",
-  "results": "Search results",
-  "noResults": "No matches",
-  "matches": "{{count}} matches",
-  "file": "File",
-  "line": "Line",
-  "column": "Col",
-  "search": "Search",
-  "stop": "Stop",
-  "chooseFolder": "Choose folder…",
-  "glob": "File pattern",
-  "replaceInFiles": "Replace in Files",
-  "dryRun": "Preview changes",
-  "applyChanges": "Apply changes",
-  "changes": "{{count}} files will change",
-  "filesScanned": "{{count}} files scanned",
-  "truncated": "Results truncated",
-  "history": "Search history",
-  "close": "Close find bar",
-  "showReplace": "Show replace",
-  "hideReplace": "Hide replace",
-  "invalidRegex": "Invalid regular expression",
-  "searchFailed": "Search failed",
-  "clearResults": "Clear results",
-  "preview": "Preview",
-  "writeChanges": "Write changes",
-  "dryRunDone": "Preview ready — no files were modified",
-  "writeDone": "{{count}} files updated",
-  "searching": "Searching…"
-}
+  const managerRef = useRef(manager)
+  managerRef.current = manager
+  const multiWindowRef = useRef(multiWindow)
+  multiWindowRef.current = multiWindow
 
---------------------------------------------------------------------------------
---- END: src/locales/en/find.json ---
+  const deferredContent = useDeferredValue(content)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [zenOpen, setZenOpen] = useState(false)
+  const [codeOpen, setCodeOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [windowCount, setWindowCount] = useState(1)
+  const [cursor, setCursor] = useState({ line: 1, column: 1, selection: 0 })
 
---- START: src/locales/en/tabs.json ---
---------------------------------------------------------------------------------
-{
-  "tabs": "Tabs",
-  "close": "Close tab",
-  "closeOthers": "Close other tabs",
-  "closeRight": "Close tabs to the right",
-  "closeLeft": "Close tabs to the left",
-  "pin": "Pin tab",
-  "unpin": "Unpin tab",
-  "detach": "Move to new window",
-  "newTab": "New tab",
-  "untitled": "Untitled",
-  "maxTabsReached": "Maximum number of tabs reached",
-  "maxTabsDetail": "Close a tab before opening another one.",
-  "maxWindowsReached": "Maximum number of windows reached",
-  "maxWindowsDetail": "Close a window before detaching another tab.",
-  "pinnedTitle": "Pinned tab",
-  "pinnedMessage": "\"{{name}}\" is pinned. Unpin and close it?",
-  "unpinAndClose": "Unpin and Close",
-  "detached": "Tab moved to a new window",
-  "copyPath": "Copy full path",
-  "reveal": "Reveal in folder",
-  "dirty": "Unsaved changes"
-}
+  const editorRef = useRef<HTMLTextAreaElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
---------------------------------------------------------------------------------
---- END: src/locales/en/tabs.json ---
+  const { handleTocClick, handleEditorScroll } = useScrollSync(editorRef, previewRef)
+  const { findNext, findPrevious } = useFindReplace(editorRef)
+  const bookmarkApi = useBookmarks(editorRef)
 
---- START: src/locales/id/common.json ---
---------------------------------------------------------------------------------
-{
-  "appName": "DocFlow Studio",
-  "save": "Simpan",
-  "saveAs": "Simpan Sebagai",
-  "open": "Buka",
-  "openRecent": "Buka Terbaru",
-  "new": "Baru",
-  "newTab": "Tab Baru",
-  "newWindow": "Jendela Baru",
-  "export": "Ekspor",
-  "settings": "Pengaturan",
-  "zen": "Mode Zen",
-  "code": "Skrip Kode",
-  "toc": "Daftar Isi",
-  "close": "Tutup",
-  "cancel": "Batal",
-  "ok": "OK",
-  "copy": "Salin",
-  "copied": "Tersalin",
-  "saved": "Tersimpan",
-  "unsaved": "Belum disimpan",
-  "notSaved": "Belum disimpan",
-  "words": "kata",
-  "chars": "karakter",
-  "selected": "dipilih",
-  "line": "Ln",
-  "column": "Kol",
-  "markdown": "Markdown",
-  "showInFolder": "Tampilkan di folder",
-  "exportComplete": "Ekspor selesai",
-  "exporting": "Mengekspor…",
-  "everythingLocal": "Semua dirender di perangkat ini.",
-  "publicationOutput": "Hasil siap publikasi, dibuat secara lokal.",
-  "exportTitle": "Ekspor dokumen",
-  "language": "Bahasa",
-  "auto": "Otomatis",
-  "english": "English",
-  "indonesian": "Bahasa Indonesia",
-  "quit": "Keluar",
-  "dropToOpen": "Lepaskan untuk membuka",
-  "dropHint": "Markdown, teks, atau dokumen yang dapat dibaca",
-  "documentSettings": "Pengaturan dokumen",
-  "shortcuts": "Pintasan Keyboard",
-  "userGuide": "Panduan Pengguna",
-  "checkUpdates": "Periksa Pembaruan",
-  "draftRestored": "Draf dipulihkan",
-  "draftDiscarded": "Draf dibuang",
-  "draftRestoredDetail": "Tinjau isi dan simpan bila sudah siap.",
-  "draftDiscardedDetail": "Salinan pemulihan telah dihapus.",
-  "newDocument": "Dokumen baru",
-  "newDocumentDetail": "Mulai menulis — Ctrl+S akan memilih lokasi.",
-  "openFailed": "Berkas ini tidak dapat dibuka",
-  "openFailedDetail": "Seret berkas Markdown dari pengelola berkas Anda.",
-  "saveFirst": "Simpan dokumen terlebih dahulu",
-  "saveFirstDetail": "Belum ada berkas di disk.",
-  "externalChange": "{{name}} diubah oleh program lain.",
-  "reloadFromDisk": "Muat ulang dari disk",
-  "keepEditing": "Lanjutkan mengedit",
-  "dismiss": "Tutup",
-  "previewUnavailable": "Pratinjau tidak tersedia",
-  "writeFailed": "Ekspor tidak dapat disimpan",
-  "saving": "Menyimpan…",
-  "windows": "jendela",
-  "settingsSubtitle": "Preferensi tipografi, halaman, dan aplikasi.",
-  "themeSection": "Tema",
-  "typographySection": "Tipografi",
-  "pageSection": "Halaman",
-  "optionsSection": "Opsi",
-  "applicationSection": "Aplikasi",
-  "applicationDetail": "Bahasa, pembaruan, dan perilaku desktop.",
-  "headerFooter": "Header & footer",
-  "headerFooterDetail": "Tampilkan judul dokumen dan tanggal ekspor pada halaman.",
-  "pageNumbers": "Nomor halaman",
-  "pageNumbersDetail": "Sertakan nomor halaman di footer.",
-  "numberHeadings": "Nomor heading",
-  "numberHeadingsDetail": "Beri awalan nomor hierarkis pada heading H2+.",
-  "justifyText": "Rata kanan-kiri",
-  "justifyTextDetail": "Sejajarkan paragraf ke kedua margin.",
-  "resetDefaults": "Kembalikan default",
-  "done": "Selesai",
-  "languageHint": "Bahasa antarmuka. Otomatis mengikuti sistem operasi.",
-  "updatesSection": "Pembaruan",
-  "updatesDetail": "Pilih kanal rilis dan pemeriksaan otomatis.",
-  "traySection": "System tray",
-  "trayDetail": "Atur ikon tray dan perilaku saat menutup.",
-  "exportDocx": "Dokumen Word",
-  "exportDocxDetail": "File .docx native dengan gaya, tabel, dan nomor halaman.",
-  "exportVector": "PDF — Vektor",
-  "exportVectorDetail": "Teks dapat dipilih dan ukuran ringkas (default).",
-  "exportRaster": "PDF — Raster",
-  "exportRasterDetail": "Snapshot presisi piksel untuk tata letak kompleks.",
-  "exportPrint": "PDF via Cetak",
-  "exportPrintDetail": "Teks dapat dipilih, membuka dialog cetak sistem.",
-  "exportDoc": "Word HTML",
-  "exportDocDetail": "File .doc lama yang dapat dibuka di Word dan LibreOffice.",
-  "exportHtml": "HTML Mandiri",
-  "exportHtmlDetail": "Halaman mandiri dengan gaya tertanam.",
-  "exportMarkdown": "Markdown",
-  "exportMarkdownDetail": "File sumber apa adanya, byte-per-byte.",
-  "vectorFallback": "PDF vektor tidak dapat menyandikan \"{{glyph}}\" — diekspor sebagai raster."
-}
+  const parsed = useMemo(() => parseMarkdown(deferredContent), [deferredContent])
+  const stats = useMemo(() => computeDocumentStats(content), [content])
+  const codeBlocks = useMemo(() => extractCodeBlocks(content), [content])
 
---------------------------------------------------------------------------------
---- END: src/locales/id/common.json ---
+  const setContent = useCallback((value: string) => {
+    const id = useTabStore.getState().activeTabId
+    if (id) useTabStore.getState().setBuffer(id, value)
+  }, [])
 
---- START: src/locales/id/editor.json ---
---------------------------------------------------------------------------------
-{
-  "bold": "Tebal",
-  "italic": "Miring",
-  "strike": "Coret",
-  "inlineCode": "Kode inline",
-  "codeBlock": "Blok kode",
-  "link": "Tautan",
-  "image": "Gambar",
-  "bullet": "Daftar butir",
-  "numbered": "Daftar bernomor",
-  "task": "Daftar tugas",
-  "hr": "Garis horizontal",
-  "h1": "Judul 1",
-  "h2": "Judul 2",
-  "h3": "Judul 3",
-  "quote": "Kutipan",
-  "table": "Tabel",
-  "theme": "Tema",
-  "fontSize": "Ukuran font",
-  "fontFamily": "Jenis font",
-  "pageSize": "Ukuran halaman",
-  "margin": "Margin",
-  "margins": "Margin",
-  "paperTone": "Warna kertas",
-  "paged": "Mode halaman",
-  "continuous": "Mode kontinu",
-  "autoScroll": "Gulir otomatis",
-  "syncToc": "Sinkronkan gulir daftar isi",
-  "copyMarkdown": "Salin Markdown",
-  "zoomIn": "Perbesar",
-  "zoomOut": "Perkecil",
-  "resetZoom": "Reset zoom",
-  "editorOnly": "Hanya editor",
-  "split": "Terpisah",
-  "previewOnly": "Hanya pratinjau",
-  "formatting": "Pemformatan",
-  "documentStyle": "Gaya dokumen",
-  "viewToggles": "Tombol tampilan",
-  "zoom": "Zoom",
-  "viewMode": "Mode tampilan"
-}
-
---------------------------------------------------------------------------------
---- END: src/locales/id/editor.json ---
-
---- START: src/locales/id/find.json ---
---------------------------------------------------------------------------------
-{
-  "find": "Cari",
-  "replace": "Ganti",
-  "findInFiles": "Cari di Berkas",
-  "findPlaceholder": "Cari di dokumen…",
-  "replacePlaceholder": "Ganti dengan…",
-  "matchCase": "Bedakan huruf",
-  "wholeWord": "Kata utuh",
-  "modeNormal": "Normal",
-  "modeExtended": "Extended",
-  "modeRegex": "Regex",
-  "unicodeEscapes": "Escape Unicode",
-  "dotNewline": "Titik mencakup baris baru",
-  "wrapAround": "Kembali ke awal",
-  "inSelection": "Dalam pilihan",
-  "backward": "Ke belakang",
-  "findNext": "Cari berikutnya",
-  "findPrevious": "Cari sebelumnya",
-  "replaceOne": "Ganti",
-  "replaceAll": "Ganti Semua",
-  "findInTabs": "Cari di Semua Tab",
-  "results": "Hasil pencarian",
-  "noResults": "Tidak ada kecocokan",
-  "matches": "{{count}} kecocokan",
-  "file": "Berkas",
-  "line": "Baris",
-  "column": "Kol",
-  "search": "Cari",
-  "stop": "Hentikan",
-  "chooseFolder": "Pilih folder…",
-  "glob": "Pola berkas",
-  "replaceInFiles": "Ganti di Berkas",
-  "dryRun": "Pratinjau perubahan",
-  "applyChanges": "Terapkan perubahan",
-  "changes": "{{count}} berkas akan berubah",
-  "filesScanned": "{{count}} berkas dipindai",
-  "truncated": "Hasil dipotong",
-  "history": "Riwayat pencarian",
-  "close": "Tutup bilah pencarian",
-  "showReplace": "Tampilkan ganti",
-  "hideReplace": "Sembunyikan ganti",
-  "invalidRegex": "Ekspresi reguler tidak valid",
-  "searchFailed": "Pencarian gagal",
-  "clearResults": "Hapus hasil",
-  "preview": "Pratinjau",
-  "writeChanges": "Tulis perubahan",
-  "dryRunDone": "Pratinjau siap — tidak ada berkas yang diubah",
-  "writeDone": "{{count}} berkas diperbarui",
-  "searching": "Mencari…"
-}
-
---------------------------------------------------------------------------------
---- END: src/locales/id/find.json ---
-
---- START: src/locales/index.ts ---
---------------------------------------------------------------------------------
-import i18n from 'i18next'
-import { initReactI18next } from 'react-i18next'
-import enCommon from './en/common.json'
-import enEditor from './en/editor.json'
-import enFind from './en/find.json'
-import enTabs from './en/tabs.json'
-import enUpdate from './en/update.json'
-import enTray from './en/tray.json'
-import enErrors from './en/errors.json'
-import idCommon from './id/common.json'
-import idEditor from './id/editor.json'
-import idFind from './id/find.json'
-import idTabs from './id/tabs.json'
-import idUpdate from './id/update.json'
-import idTray from './id/tray.json'
-import idErrors from './id/errors.json'
-
-export const LOCALE_NAMESPACES = ['common', 'editor', 'find', 'tabs', 'update', 'tray', 'errors'] as const
-
-void i18n.use(initReactI18next).init({
-  resources: {
-    en: {
-      common: enCommon,
-      editor: enEditor,
-      find: enFind,
-      tabs: enTabs,
-      update: enUpdate,
-      tray: enTray,
-      errors: enErrors
-    },
-    id: {
-      common: idCommon,
-      editor: idEditor,
-      find: idFind,
-      tabs: idTabs,
-      update: idUpdate,
-      tray: idTray,
-      errors: idErrors
+  const getSelectedText = useCallback((): string => {
+    const editor = editorRef.current
+    if (editor && editor.selectionEnd > editor.selectionStart) {
+      return editor.value.substring(editor.selectionStart, editor.selectionEnd)
     }
-  },
-  lng: 'en',
-  fallbackLng: 'en',
-  ns: [...LOCALE_NAMESPACES],
-  defaultNS: 'common',
-  interpolation: { escapeValue: false },
-  returnNull: false
+    const windowSel = window.getSelection()?.toString() ?? ''
+    return windowSel
+  }, [])
+
+  const openFind = useCallback((showReplace = false) => {
+    const search = useSearchStore.getState()
+    const ui = useUIStore.getState()
+    if (ui.viewMode === 'preview') ui.setUIState({ viewMode: 'split' })
+
+    const editor = editorRef.current
+    if (editor && editor.selectionEnd > editor.selectionStart) {
+      search.setSelectionRange({ start: editor.selectionStart, end: editor.selectionEnd })
+    } else {
+      search.setSelectionRange(null)
+    }
+
+    const isFindBarFocused = Boolean(document.activeElement?.closest('.find-bar'))
+    if (!isFindBarFocused) {
+      const selected = getSelectedText().trim()
+      if (selected) {
+        const singleLine = selected.includes('\n') ? selected.split(/\r?\n/)[0].trim() : selected
+        if (singleLine) {
+          search.setQuery(singleLine)
+        }
+      }
+    }
+
+    search.openFind(showReplace)
+  }, [getSelectedText])
+
+  const openFindInFiles = useCallback(() => {
+    const search = useSearchStore.getState()
+    const ui = useUIStore.getState()
+    if (ui.viewMode === 'preview') ui.setUIState({ viewMode: 'split' })
+
+    const isFindFilesFocused = Boolean(document.activeElement?.closest('.find-files'))
+    if (!isFindFilesFocused) {
+      const selected = getSelectedText().trim()
+      if (selected) {
+        const singleLine = selected.includes('\n') ? selected.split(/\r?\n/)[0].trim() : selected
+        if (singleLine) {
+          search.setQuery(singleLine)
+        }
+      }
+    }
+
+    search.openFindInFiles()
+  }, [getSelectedText])
+
+  const openExport = useCallback(() => {
+    if (useUIStore.getState().viewMode === 'editor') {
+      useUIStore.getState().setUIState({ viewMode: 'split' })
+    }
+    setExportOpen(true)
+  }, [])
+
+  const focusEditor = useCallback(() => {
+    if (useUIStore.getState().viewMode === 'preview') {
+      useUIStore.getState().setUIState({ viewMode: 'split' })
+      requestAnimationFrame(() => editorRef.current?.focus())
+      return
+    }
+    editorRef.current?.focus()
+  }, [])
+
+  const revealInFolder = useCallback(() => {
+    const current = useTabStore.getState().getActive()
+    if (!current?.filePath) {
+      useFileStore.getState().showToast('info', t('saveFirst'), t('saveFirstDetail'))
+      return
+    }
+    void window.docflow.app.showItemInFolder(current.filePath).catch(() => undefined)
+  }, [t])
+
+  const togglePin = useCallback(() => {
+    const id = useTabStore.getState().activeTabId
+    if (id) useTabStore.getState().togglePin(id)
+  }, [])
+
+  const cycleTab = useCallback((direction: 1 | -1) => {
+    const state = useTabStore.getState()
+    if (state.tabs.length < 2) return
+    const index = state.tabs.findIndex((tab) => tab.id === state.activeTabId)
+    const next = (index + direction + state.tabs.length) % state.tabs.length
+    state.activateTab(state.tabs[next].id)
+  }, [])
+
+  // Keep the window count in sync across windows without a dedicated broadcast.
+  useEffect(() => {
+    let cancelled = false
+    const sync = () => {
+      void window.docflow?.window
+        ?.count?.()
+        .then((count) => {
+          if (!cancelled) setWindowCount(count)
+        })
+        .catch(() => undefined)
+    }
+    sync()
+    const timer = window.setInterval(sync, 4000)
+    window.addEventListener('focus', sync)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', sync)
+    }
+  }, [])
+
+  // Open a file passed by the OS after the session has been hydrated.
+  useEffect(() => {
+    let disposed = false
+    let started = false
+    const boot = async () => {
+      if (started) return
+      started = true
+      for (let attempt = 0; attempt < 80 && !useTabStore.getState().hydrated; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+      if (disposed) return
+      try {
+        const launch = await window.docflow.app.consumeLaunchFile()
+        if (launch) await managerRef.current.openPath(launch.path, true)
+      } catch {
+        // The welcome document remains usable if launch routing fails.
+      }
+    }
+    void boot()
+    return () => {
+      disposed = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const unsubscribeOpen = window.docflow.app.onOpenFile(({ path }) => {
+      void managerRef.current.openPath(path)
+    })
+
+    const unsubscribeAction = window.docflow.app.onAction(({ action }) => {
+      const current = useTabStore.getState()
+      const api = managerRef.current
+      switch (action) {
+        case 'new':
+        case 'newTab':
+          void api.newTab()
+          break
+        case 'open':
+          void api.openDialog()
+          break
+        case 'save':
+          void api.save()
+          break
+        case 'saveAs':
+          void api.saveAs()
+          break
+        case 'saveAll':
+          void api.saveAll()
+          break
+        case 'closeTab':
+          if (current.activeTabId) void api.closeTab(current.activeTabId)
+          break
+        case 'closeOthers':
+          if (current.activeTabId) void api.closeOthers(current.activeTabId)
+          break
+        case 'closeRight':
+          if (current.activeTabId) void api.closeToRight(current.activeTabId)
+          break
+        case 'closeLeft':
+          if (current.activeTabId) void api.closeToLeft(current.activeTabId)
+          break
+        case 'request-save-and-close':
+          void api.requestSaveAndClose()
+          break
+        case 'discard-and-close':
+          void api.discardAndClose()
+          break
+        case 'export':
+          openExport()
+          break
+        case 'zen':
+          setZenOpen(true)
+          break
+        case 'settings':
+          setSettingsOpen(true)
+          break
+        case 'code':
+          setCodeOpen(true)
+          break
+        case 'shortcuts':
+          setShortcutsOpen(true)
+          break
+        case 'toggleToc':
+          useUIStore.getState().setUIState({ isTocVisible: !useUIStore.getState().isTocVisible })
+          break
+        case 'find':
+          openFind(false)
+          break
+        case 'replace':
+          openFind(true)
+          break
+        case 'findInFiles':
+          openFindInFiles()
+          break
+        case 'reveal':
+          revealInFolder()
+          break
+        case 'newWindow':
+          void multiWindowRef.current.newWindow()
+          break
+        case 'quit':
+          void window.docflow.window.close()
+          break
+        case 'guide':
+          useFileStore
+            .getState()
+            .showToast('info', t('userGuide'), 'Open docs/USER_GUIDE.md in the project folder for the full manual.')
+          break
+        default:
+          break
+      }
+    })
+
+    const unsubscribeTabAction = window.docflow.app.onTabAction(({ action, tabId }) => {
+      const api = managerRef.current
+      switch (action) {
+        case 'close':
+          void api.closeTab(tabId)
+          break
+        case 'closeOthers':
+          void api.closeOthers(tabId)
+          break
+        case 'closeRight':
+          void api.closeToRight(tabId)
+          break
+        case 'closeLeft':
+          void api.closeToLeft(tabId)
+          break
+        case 'togglePin':
+          api.togglePin(tabId)
+          break
+        case 'detach':
+          void multiWindowRef.current.detachTab(tabId)
+          break
+        default:
+          break
+      }
+    })
+
+    return () => {
+      unsubscribeOpen()
+      unsubscribeAction()
+      unsubscribeTabAction()
+    }
+  }, [openExport, openFind, openFindInFiles, revealInFolder, t])
+
+  const handleFormat = useCallback(
+    (action: FormatAction) => {
+      const textarea = editorRef.current
+      const id = useTabStore.getState().activeTabId
+      if (!textarea || !id) return
+      const result = applyFormatting(textarea, action)
+      useTabStore.getState().setBuffer(id, result.value)
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(result.selectionStart, result.selectionEnd)
+        const position = cursorFromOffset(result.value, result.selectionStart)
+        setCursor({
+          line: position.line,
+          column: position.column,
+          selection: Math.abs(result.selectionEnd - result.selectionStart)
+        })
+      })
+    },
+    []
+  )
+
+  useEffect(() => {
+    const el = editorRef.current
+    if (!el) return
+    const onScroll = () => {
+      handleEditorScroll()
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => {
+        scrollTimerRef.current = null
+        const id = useTabStore.getState().activeTabId
+        if (id) useTabStore.getState().updateTab(id, { editorScrollTop: el.scrollTop })
+      }, 180)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current)
+        scrollTimerRef.current = null
+      }
+    }
+  }, [handleEditorScroll])
+
+  useEffect(() => {
+    const tab = useTabStore.getState().getTab(useTabStore.getState().activeTabId ?? '')
+    if (!tab) return
+    const frame = requestAnimationFrame(() => {
+      const editor = editorRef.current
+      if (editor) {
+        editor.scrollTop = tab.editorScrollTop
+        const start = Math.min(tab.cursorOffset, editor.value.length)
+        const end = Math.min(Math.max(tab.selectionEnd, start), editor.value.length)
+        editor.setSelectionRange(start, end)
+      }
+      const preview = previewRef.current
+      if (preview) preview.scrollTop = tab.previewScrollTop
+    })
+    const position = cursorFromOffset(tab.fileContent, tab.cursorOffset)
+    setCursor({
+      line: position.line,
+      column: position.column,
+      selection: Math.max(0, tab.selectionEnd - tab.cursorOffset)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activeTabId])
+
+  const focusHeading = useCallback(
+    (id: string) => {
+      const item = parsed.headings.find((heading) => heading.id === id)
+      if (item) handleTocClick(item)
+      else {
+        const target = previewRef.current?.querySelector<HTMLElement>(`[id="${id.replace(/"/g, '\\"')}"]`)
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+    [parsed.headings, handleTocClick]
+  )
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setDragging(false)
+    const file = event.dataTransfer.files.item(0)
+    if (!file) return
+    const path = window.docflow.file.getPathForFile(file)
+    if (!path) {
+      useFileStore.getState().showToast('error', t('openFailed'), t('openFailedDetail'))
+      return
+    }
+    await managerRef.current.openPath(path)
+  }
+
+  useKeyboardShortcuts({
+    onNew: () => void managerRef.current.newTab(),
+    onOpen: () => void managerRef.current.openDialog(),
+    onSave: () => void managerRef.current.save(),
+    onSaveAs: () => void managerRef.current.saveAs(),
+    onExport: openExport,
+    onFind: () => {
+      const isFindBarFocused = Boolean(document.activeElement?.closest('.find-bar'))
+      const editor = editorRef.current
+      const hasEditorSelection = Boolean(editor && editor.selectionEnd > editor.selectionStart)
+      const hasWindowSelection = Boolean(window.getSelection()?.toString().trim())
+      const hasSelection = hasEditorSelection || hasWindowSelection
+
+      if (hasSelection && !isFindBarFocused) {
+        openFind(false)
+      } else if (useSearchStore.getState().isOpen && isFindBarFocused) {
+        findNext()
+      } else {
+        openFind(false)
+      }
+    },
+    onReplace: () => openFind(true),
+    onFindInFiles: openFindInFiles,
+    onCloseTab: () => {
+      const id = useTabStore.getState().activeTabId
+      if (id) void managerRef.current.closeTab(id)
+    },
+    onNextTab: () => cycleTab(1),
+    onPreviousTab: () => cycleTab(-1),
+    onTogglePin: togglePin,
+    onNewWindow: () => void multiWindowRef.current.newWindow(),
+    onFindNext: () => {
+      if (useSearchStore.getState().query) findNext()
+      else openFind(false)
+    },
+    onFindPrevious: () => findPrevious(),
+    onToggleBookmark: () => void bookmarkApi.toggleBookmark(),
+    onNextBookmark: () => void bookmarkApi.goToNextBookmark(),
+    onPrevBookmark: () => void bookmarkApi.goToPrevBookmark(),
+    onClearBookmarks: () => void bookmarkApi.clearMarks(),
+    onCopyMarked: () => void bookmarkApi.copyMarkedLines()
+  })
+
+  const title = fileName.replace(/\.[^.]+$/, '')
+  const externalChange = activeTab?.externalChange ?? null
+  const conflict = activeTab?.conflict ?? null
+
+  return (
+    <div
+      className={`app-shell ${dragging ? 'is-dragging' : ''}`}
+      onDragOver={(event) => {
+        event.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={(event) => {
+        if (event.currentTarget === event.target) setDragging(false)
+      }}
+      onDrop={(event) => void handleDrop(event)}
+    >
+      <TopNav
+        onNew={() => void manager.newTab()}
+        onOpen={() => void manager.openDialog()}
+        onSave={() => void manager.save()}
+        onSaveAs={() => void manager.saveAs()}
+        onExport={openExport}
+        onZen={() => setZenOpen(true)}
+        onCode={() => setCodeOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
+        onToggleToc={() => useUIStore.getState().setUIState({ isTocVisible: !useUIStore.getState().isTocVisible })}
+        onOpenRecent={(path) => void manager.openPath(path)}
+        onPinRecent={(path) => void manager.toggleRecentPin(path)}
+        onRemoveRecent={(path) => void manager.removeRecent(path)}
+        onClearRecent={() => void manager.clearRecent()}
+        onNewWindow={() => void multiWindow.newWindow()}
+        onFindInFiles={openFindInFiles}
+      />
+
+      <TabBar
+        onNewTab={() => void manager.newTab()}
+        onCloseTab={(id) => void manager.closeTab(id)}
+        onDetachTab={(id) => void multiWindow.detachTab(id)}
+      />
+
+      <UpdateBanner />
+
+      <FormattingToolbar
+        viewMode={viewMode}
+        disabled={viewMode === 'preview'}
+        onViewMode={(mode) => setViewMode({ viewMode: mode })}
+        onFormat={handleFormat}
+      />
+
+      <FindReplaceBar editorRef={editorRef} />
+      <FindResultsPanel editorRef={editorRef} />
+      <FindInFilesPanel editorRef={editorRef} />
+
+      <div className="workspace">
+        {uiState.isTocVisible && (
+          <TableOfContents
+            headings={parsed.headings}
+            stats={stats}
+            theme={settings.theme}
+            onSelect={focusHeading}
+          />
+        )}
+
+        <main className="document-workspace">
+          {externalChange && (
+            <div className="external-banner">
+              <AlertTriangle size={15} />
+              <span>
+                <strong>{fileName}</strong> {t('externalChange', { name: '' }).trim()}
+              </span>
+              <div className="external-actions">
+                <button type="button" onClick={() => void manager.reloadExternal(activeTabId ?? undefined)}>
+                  <RefreshCw size={13} /> {t('reloadFromDisk')}
+                </button>
+                <button type="button" onClick={() => manager.dismissExternal(activeTabId ?? undefined)}>
+                  {t('keepEditing')}
+                </button>
+                <button
+                  type="button"
+                  className="external-close"
+                  onClick={() => manager.dismissExternal(activeTabId ?? undefined)}
+                  title={t('dismiss')}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className={`panes view-${viewMode}`}>
+            {viewMode !== 'preview' && (
+              <DocumentEditor
+                ref={editorRef}
+                value={content}
+                onChange={setContent}
+                onCursorChange={setCursor}
+                fontSize={settings.fontSize}
+                fontFamily={settings.fontFamily}
+              />
+            )}
+            {viewMode !== 'editor' && (
+              <DocumentViewer
+                ref={previewRef}
+                html={parsed.html}
+                title={title}
+                settings={settings}
+                zoomLevel={uiState.zoomLevel}
+                isPagedMode={uiState.isPagedMode}
+                onScrollTop={(top) => {
+                  const id = useTabStore.getState().activeTabId
+                  if (id) useTabStore.getState().updateTab(id, { previewScrollTop: top })
+                }}
+              />
+            )}
+          </div>
+        </main>
+      </div>
+
+      <StatusBar
+        filePath={filePath}
+        dirty={dirty}
+        encoding={activeTab?.encoding ?? 'utf-8'}
+        lineEnding={activeTab?.lineEnding ?? 'lf'}
+        cursor={cursor}
+        stats={stats}
+        tabCount={tabs.length}
+        windowCount={windowCount}
+        zoomLevel={uiState.zoomLevel}
+      />
+
+      {dragging && (
+        <div className="drop-overlay">
+          <div className="drop-card">
+            <span className="drop-icon">↓</span>
+            <strong>{t('dropToOpen')}</strong>
+            <span>{t('dropHint')}</span>
+          </div>
+        </div>
+      )}
+
+      <DocumentSettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        markdown={content}
+        title={fileName}
+        settings={settings}
+        getPreviewElement={() => previewRef.current?.querySelector('.document-page') ?? null}
+      />
+      <ZenReviewModal
+        open={zenOpen}
+        onClose={() => setZenOpen(false)}
+        html={parsed.html}
+        title={fileName}
+        settings={settings}
+        onThemeChange={(theme) => useFileStore.getState().setSettings({ theme })}
+      />
+      <CodeScriptModal open={codeOpen} onClose={() => setCodeOpen(false)} blocks={codeBlocks} />
+      <ShortcutHelpModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {conflict && activeTabId && (
+        <ConflictDialog
+          diskMtime={conflict.diskMtime}
+          fileName={fileName}
+          onOverwrite={() => void manager.overwriteConflict(activeTabId)}
+          onReload={() => void manager.reloadConflict(activeTabId)}
+          onSaveAs={() => void manager.saveAsConflict(activeTabId)}
+          onCancel={() => useTabStore.getState().setConflict(activeTabId, null)}
+        />
+      )}
+
+      <Toast />
+    </div>
+  )
+}
+
+--------------------------------------------------------------------------------
+--- END: src/App.tsx ---
+
+--- START: src/components/DocumentEditor.tsx ---
+--------------------------------------------------------------------------------
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type UIEvent
+} from 'react'
+import {
+  Bookmark,
+  BookmarkX,
+  ChevronDown,
+  ChevronUp,
+  Copy
+} from 'lucide-react'
+import { useContextMenu } from '../hooks/useContextMenu'
+import { useBookmarks } from '../hooks/useBookmarks'
+import { useI18n } from '../hooks/useI18n'
+import { useSearchStore } from '../store/searchStore'
+import { useBookmarkStore } from '../store/bookmarkStore'
+import { useTabStore } from '../store/tabStore'
+import { buildRegExp, findAll } from '../utils/searchRegex'
+import {
+  bookmarkLinesToRanges,
+  searchMatchesToRanges,
+  buildSegments,
+  type TextSegment
+} from '../utils/highlightRanges'
+import type { FontFamily, FontSize } from '../../electron/types/ipc'
+
+interface DocumentEditorProps {
+  value: string
+  onChange(value: string): void
+  onCursorChange(position: { line: number; column: number; selection: number }): void
+  fontSize: FontSize
+  fontFamily: FontFamily
+}
+
+// Stable empty array — avoids creating a new reference every render when
+// there are no bookmarks, which would trigger Zustand's snapshot loop check.
+const EMPTY_LINES: number[] = []
+
+// ── Backdrop Segment Renderer ────────────────────────────────────────────────
+
+function SegmentSpan({ seg }: { seg: TextSegment }) {
+  if (seg.kind === 'plain') {
+    // Use dangerouslySetInnerHTML-free approach: just a span
+    return <span>{seg.text}</span>
+  }
+  return <mark className={`hl-${seg.kind}`}>{seg.text}</mark>
+}
+
+// ── Main Component ───────────────────────────────────────────────────────────
+
+export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProps>(function DocumentEditor(
+  { value, onChange, onCursorChange, fontSize, fontFamily },
+  ref
+) {
+  const { t } = useI18n()
+  const { handleContextMenu } = useContextMenu()
+  const internalRef = useRef<HTMLTextAreaElement | null>(null)
+  const gutterRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewportHeight, setViewportHeight] = useState(600)
+  const [currentLine, setCurrentLine] = useState(1)
+  const [showBookmarkList, setShowBookmarkList] = useState(false)
+
+  // Search & bookmark state (use scalar selectors to avoid object-reference churn)
+  const searchQuery = useSearchStore((s) => s.query)
+  const searchMatchCase = useSearchStore((s) => s.options.matchCase)
+  const searchMode = useSearchStore((s) => s.options.mode)
+  const searchWholeWord = useSearchStore((s) => s.options.matchWholeWord)
+  const searchDotNewline = useSearchStore((s) => s.options.dotMatchesNewline)
+  const isSearchOpen = useSearchStore((s) => s.isOpen)
+  const lastMatchIndex = useSearchStore((s) => s.lastMatch?.index ?? null)
+  const lastMatchLength = useSearchStore((s) => s.lastMatch?.length ?? null)
+  const activeTabId = useTabStore((s) => s.activeTabId) ?? ''
+  // Use a stable selector: return the stored array or undefined, then fall back
+  // to a module-level constant to avoid a new [] reference every render.
+  const bookmarkLineNums = useBookmarkStore((s) => s.bookmarks[activeTabId]) ?? EMPTY_LINES
+
+  const {
+    bookmarks,
+    toggleBookmark,
+    goToLine,
+    goToNextBookmark,
+    goToPrevBookmark,
+    copyMarkedLines,
+    clearMarks
+  } = useBookmarks(internalRef)
+
+  const setRefs = useCallback(
+    (el: HTMLTextAreaElement | null) => {
+      internalRef.current = el
+      if (typeof ref === 'function') ref(el)
+      else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = el
+    },
+    [ref]
+  )
+
+  // ── Resize observer ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!internalRef.current || typeof ResizeObserver === 'undefined') return
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setViewportHeight(entry.contentRect.height)
+      }
+    })
+    resizeObserver.observe(internalRef.current)
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // ── Popover outside-click ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!showBookmarkList) return
+    const handler = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowBookmarkList(false)
+      }
+    }
+    window.addEventListener('mousedown', handler)
+    return () => window.removeEventListener('mousedown', handler)
+  }, [showBookmarkList])
+
+  // ── Cursor tracking ──────────────────────────────────────────────────────────
+  const updateCursor = (element: HTMLTextAreaElement) => {
+    const before = element.value.slice(0, element.selectionStart)
+    const lines = before.split('\n')
+    const lineNum = lines.length
+    setCurrentLine(lineNum)
+    onCursorChange({
+      line: lineNum,
+      column: (lines[lines.length - 1]?.length ?? 0) + 1,
+      selection: Math.abs(element.selectionEnd - element.selectionStart)
+    })
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Tab') return
+    event.preventDefault()
+    const element = event.currentTarget
+    element.setRangeText('  ', element.selectionStart, element.selectionEnd, 'end')
+    onChange(element.value)
+    updateCursor(element)
+  }
+
+  const handleScroll = (event: UIEvent<HTMLTextAreaElement>) => {
+    const target = event.currentTarget
+    const st = target.scrollTop
+    setScrollTop(st)
+    if (gutterRef.current) gutterRef.current.scrollTop = st
+    if (backdropRef.current) backdropRef.current.scrollTop = st
+  }
+
+  // ── Virtual gutter ───────────────────────────────────────────────────────────
+  const allLines = value.split('\n')
+  const lineCount = allLines.length
+  const lineHeight = fontSize === 'sm' ? 21.875 : fontSize === 'lg' ? 28 : 24.5
+
+  const visibleStart = Math.max(1, Math.floor(scrollTop / lineHeight) - 5)
+  const visibleEnd = Math.min(lineCount, Math.ceil((scrollTop + viewportHeight) / lineHeight) + 10)
+
+  const topSpacer = Math.max(0, (visibleStart - 1) * lineHeight)
+  const bottomSpacer = Math.max(0, (lineCount - visibleEnd) * lineHeight)
+
+  const visibleLines: number[] = []
+  for (let i = visibleStart; i <= visibleEnd; i++) {
+    visibleLines.push(i)
+  }
+
+  // ── Highlight segments (memoised) ────────────────────────────────────────────
+  const highlightSegments = useMemo(() => {
+    const allRanges = []
+
+    // 1. Bookmark-line ranges
+    const bmRanges = bookmarkLinesToRanges(value, bookmarkLineNums)
+    allRanges.push(...bmRanges)
+
+    // 2. Search match ranges (only when search bar is open and query exists)
+    if (isSearchOpen && searchQuery) {
+      try {
+        const regex = buildRegExp(searchQuery, {
+          matchCase: searchMatchCase,
+          mode: searchMode,
+          matchWholeWord: searchWholeWord,
+          dotMatchesNewline: searchDotNewline,
+          inSelection: false
+        })
+        const matches = findAll(value, regex)
+        const currentIdx = lastMatchIndex
+        const currentLen = lastMatchLength
+        const searchRanges = searchMatchesToRanges(
+          matches.map((m) => ({ index: m.index, length: m.length })),
+          currentIdx,
+          currentLen
+        )
+        allRanges.push(...searchRanges)
+      } catch {
+        // Invalid regex — no search highlights
+      }
+    }
+
+    if (allRanges.length === 0) return null
+    return buildSegments(value, allRanges)
+  }, [value, bookmarkLineNums, isSearchOpen, searchQuery, searchMatchCase, searchMode, searchWholeWord, searchDotNewline, lastMatchIndex, lastMatchLength])
+
+  const showBackdrop = highlightSegments !== null && highlightSegments.length > 0
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+  return (
+    <section className="editor-pane">
+      <div className="pane-header">
+        <div className="pane-header-left">
+          <span className="pane-label">Markdown</span>
+          <span className="pane-hint">{lineCount} lines</span>
+        </div>
+
+        <div className="bookmark-toolbar">
+          <button
+            type="button"
+            className="icon-button"
+            title={t('find:toggleBookmark')}
+            onClick={() => toggleBookmark(currentLine)}
+          >
+            <Bookmark
+              size={13}
+              fill={bookmarks.includes(currentLine) ? 'currentColor' : 'none'}
+              color={bookmarks.includes(currentLine) ? 'var(--accent)' : 'currentColor'}
+            />
+          </button>
+
+          {bookmarks.length > 0 && (
+            <>
+              <button
+                type="button"
+                className="bookmark-badge-btn"
+                title={`${bookmarks.length} ${t('find:bookmarks')} — Click to view list`}
+                onClick={() => setShowBookmarkList((v) => !v)}
+              >
+                <Bookmark size={11} fill="currentColor" /> {bookmarks.length}
+              </button>
+
+              <button
+                type="button"
+                className="icon-button"
+                title={t('find:prevBookmark')}
+                onClick={() => goToPrevBookmark()}
+              >
+                <ChevronUp size={13} />
+              </button>
+
+              <button
+                type="button"
+                className="icon-button"
+                title={t('find:nextBookmark')}
+                onClick={() => goToNextBookmark()}
+              >
+                <ChevronDown size={13} />
+              </button>
+
+              <button
+                type="button"
+                className="icon-button"
+                title={t('find:copyMarked')}
+                onClick={() => void copyMarkedLines()}
+              >
+                <Copy size={13} />
+              </button>
+
+              <button
+                type="button"
+                className="icon-button"
+                title={t('find:clearAllBookmarks')}
+                onClick={() => clearMarks()}
+              >
+                <BookmarkX size={13} />
+              </button>
+            </>
+          )}
+
+          {showBookmarkList && (
+            <div className="bookmark-popover" ref={popoverRef}>
+              <div className="bookmark-popover-head">
+                <strong>
+                  {t('find:bookmarks')} ({bookmarks.length})
+                </strong>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => clearMarks()}
+                  title={t('find:clearAllBookmarks')}
+                >
+                  <BookmarkX size={13} />
+                </button>
+              </div>
+              <div className="bookmark-popover-list">
+                {bookmarks.map((lineNum) => {
+                  const lineContent = allLines[lineNum - 1] ?? ''
+                  return (
+                    <button
+                      key={lineNum}
+                      type="button"
+                      className="bookmark-popover-item"
+                      onClick={() => {
+                        goToLine(lineNum)
+                        setShowBookmarkList(false)
+                      }}
+                    >
+                      <span className="bookmark-popover-line">Ln {lineNum}</span>
+                      <span className="bookmark-popover-preview">
+                        {lineContent.trim() || '(empty line)'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="editor-container">
+        {/* Line number gutter */}
+        <div ref={gutterRef} className={`editor-gutter size-${fontSize}`}>
+          <div style={{ height: topSpacer }} />
+          {visibleLines.map((lineNum) => {
+            const isBookmarked = bookmarks.includes(lineNum)
+            const isCurrent = currentLine === lineNum
+            return (
+              <div
+                key={lineNum}
+                className={`gutter-line ${isBookmarked ? 'is-bookmarked' : ''} ${
+                  isCurrent ? 'is-current' : ''
+                }`}
+                style={{ height: lineHeight }}
+                onClick={() => toggleBookmark(lineNum)}
+                title={`Line ${lineNum}${
+                  isBookmarked ? ' (Bookmarked - click to remove)' : ' (Click to bookmark)'
+                }`}
+              >
+                <span className="gutter-bookmark">
+                  {isBookmarked ? (
+                    <Bookmark size={10} fill="currentColor" />
+                  ) : (
+                    <span className="bookmark-hover-dot" />
+                  )}
+                </span>
+                <span className="gutter-number">{lineNum}</span>
+              </div>
+            )
+          })}
+          <div style={{ height: bottomSpacer }} />
+        </div>
+
+        {/* Highlight backdrop — sits behind the transparent textarea */}
+        {showBackdrop && (
+          <div
+            ref={backdropRef}
+            className={`editor-backdrop font-${fontFamily} size-${fontSize}`}
+            aria-hidden="true"
+          >
+            {highlightSegments!.map((seg, i) => (
+              <SegmentSpan key={i} seg={seg} />
+            ))}
+          </div>
+        )}
+
+        {/* Actual editor textarea */}
+        <textarea
+          ref={setRefs}
+          className={`editor-textarea font-${fontFamily} size-${fontSize}${showBackdrop ? ' has-backdrop' : ''}`}
+          value={value}
+          onChange={(event) => {
+            onChange(event.target.value)
+            updateCursor(event.target)
+          }}
+          onScroll={handleScroll}
+          onSelect={(event) => updateCursor(event.currentTarget)}
+          onKeyUp={(event) => updateCursor(event.currentTarget)}
+          onClick={(event) => updateCursor(event.currentTarget)}
+          onKeyDown={handleKeyDown}
+          onContextMenu={(e) => handleContextMenu(e, 'editor')}
+          spellCheck
+          placeholder="Start writing Markdown…"
+          aria-label="Markdown editor"
+        />
+      </div>
+    </section>
+  )
 })
 
-export default i18n
+--------------------------------------------------------------------------------
+--- END: src/components/DocumentEditor.tsx ---
+
+--- START: src/components/DocumentViewer.tsx ---
+--------------------------------------------------------------------------------
+import { forwardRef, type MouseEvent, type UIEvent } from 'react'
+import type { DocumentSettings } from '../types/document'
+import { copyText } from '../utils/clipboard'
+import { useFileStore } from '../store/fileStore'
+import { describeError } from '../utils/errors'
+import { useContextMenu } from '../hooks/useContextMenu'
+
+interface DocumentViewerProps {
+  html: string
+  title: string
+  settings: DocumentSettings
+  zen?: boolean
+  zoomLevel?: number
+  isPagedMode?: boolean
+  onScrollTop?: (top: number) => void
+}
+
+export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(function DocumentViewer(
+  { html, title, settings, zen = false, zoomLevel = 100, isPagedMode = true, onScrollTop },
+  ref
+) {
+  const { handleContextMenu } = useContextMenu()
+
+  const handleClick = async (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement
+    const copyButton = target.closest<HTMLButtonElement>('[data-copy-code]')
+    if (copyButton) {
+      const block = copyButton.closest('.code-block')
+      const code = block?.querySelector('code')?.textContent ?? ''
+      const ok = await copyText(code)
+      copyButton.textContent = ok ? 'Copied' : 'Failed'
+      window.setTimeout(() => {
+        copyButton.textContent = 'Copy'
+      }, 1400)
+      return
+    }
+
+    const anchor = target.closest<HTMLAnchorElement>('a[href]')
+    if (!anchor) return
+    const href = anchor.getAttribute('href') ?? ''
+    if (href.startsWith('#')) {
+      event.preventDefault()
+      const destination = document.getElementById(href.slice(1))
+      destination?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (/^https?:\/\//i.test(href)) {
+      event.preventDefault()
+      try {
+        await window.docflow.app.openExternal(href)
+      } catch (error) {
+        const described = describeError(error)
+        useFileStore.getState().showToast(described.kind, described.message, described.detail)
+      }
+    }
+  }
+
+  const today = new Date().toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+
+  return (
+    <section
+      ref={ref}
+      className={`preview-pane ${zen ? 'zen-preview' : ''}`}
+      onContextMenu={(e) => handleContextMenu(e, 'preview')}
+      onScroll={(event: UIEvent<HTMLElement>) => onScrollTop?.(event.currentTarget.scrollTop)}
+    >
+      <div className="preview-stage">
+        <article
+          style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
+          className={`document-page theme-${settings.theme} paper-${settings.paperTone} font-${settings.fontFamily} size-${settings.fontSize} margin-${settings.marginSize} ${settings.justifyText ? 'justify-text' : ''} ${settings.autoNumberHeadings ? 'numbered-headings' : ''} ${isPagedMode ? 'paged-mode' : 'continuous-mode'}`}
+        >
+          {settings.showHeaderFooter && (
+            <header className="doc-header">
+              <span className="doc-header-title">{title}</span>
+              <span className="doc-header-meta">DocFlow Studio</span>
+            </header>
+          )}
+          <div
+            className="markdown-body"
+            onClick={(event) => void handleClick(event)}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+          {settings.showHeaderFooter && (
+            <footer className="doc-footer">
+              <span>{today}</span>
+              {settings.showPageNumbers && <span className="doc-page-number">1</span>}
+            </footer>
+          )}
+        </article>
+      </div>
+    </section>
+  )
+})
 
 --------------------------------------------------------------------------------
---- END: src/locales/index.ts ---
+--- END: src/components/DocumentViewer.tsx ---
+
+--- START: src/components/FindReplaceBar.tsx ---
+--------------------------------------------------------------------------------
+import { useEffect, useRef } from 'react'
+import type { RefObject } from 'react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Bookmark,
+  BookmarkX,
+  CaseSensitive,
+  Copy,
+  FileSearch,
+  Replace,
+  WholeWord,
+  X
+} from 'lucide-react'
+import type { FindMode } from '../../electron/types/ipc'
+import { useSearchStore } from '../store/searchStore'
+import { useI18n } from '../hooks/useI18n'
+import { useFindReplace } from '../hooks/useFindReplace'
+import { useBookmarks } from '../hooks/useBookmarks'
+
+interface FindReplaceBarProps {
+  editorRef: RefObject<HTMLTextAreaElement | null>
+}
+
+export function FindReplaceBar({ editorRef }: FindReplaceBarProps) {
+  const search = useSearchStore()
+  const { t } = useI18n()
+  const { findNext, findPrevious, replaceOne, replaceAll, countMatches, findAllInTabs } = useFindReplace(editorRef)
+  const { bookmarks, bookmarkLine, setBookmarkLine, markAll, copyMarkedLines, clearMarks } = useBookmarks(editorRef)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!search.isOpen) return
+    const timer = window.setTimeout(() => {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }, 30)
+    return () => window.clearTimeout(timer)
+  }, [search.isOpen, search.focusToken])
+
+  if (!search.isOpen) return null
+
+  const matches = search.query ? countMatches() : 0
+  const toggle = (key: 'matchCase' | 'matchWholeWord' | 'dotMatchesNewline' | 'wrapAround' | 'inSelection' | 'backward') => {
+    search.setOptions({ [key]: !search.options[key] })
+  }
+
+  return (
+    <div className="find-bar" role="search">
+      <div className="find-row">
+        <div className="find-input-wrap">
+          <input
+            ref={inputRef}
+            type="text"
+            className="find-input"
+            list="docflow-find-history"
+            placeholder={t('find:findPlaceholder')}
+            value={search.query}
+            onChange={(event) => search.setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                if (event.shiftKey) findPrevious()
+                else findNext()
+              } else if (event.key === 'Escape') {
+                event.preventDefault()
+                search.closeFind()
+              }
+            }}
+            aria-label={t('find:find')}
+          />
+          <datalist id="docflow-find-history">
+            {search.history.map((item) => (
+              <option key={item} value={item} />
+            ))}
+          </datalist>
+        </div>
+        <span className={`find-count ${search.query && matches === 0 ? 'is-empty' : ''}`}>
+          {search.query ? t('find:matches', { count: matches }) : ''}
+        </span>
+        <button type="button" className="find-icon" title={t('find:findPrevious')} onClick={() => findPrevious()}>
+          <ArrowUp size={15} />
+        </button>
+        <button type="button" className="find-icon" title={t('find:findNext')} onClick={() => findNext()}>
+          <ArrowDown size={15} />
+        </button>
+        <button
+          type="button"
+          className={`find-toggle ${search.options.matchCase ? 'active' : ''}`}
+          title={t('find:matchCase')}
+          aria-pressed={search.options.matchCase}
+          onClick={() => toggle('matchCase')}
+        >
+          <CaseSensitive size={16} />
+        </button>
+        <button
+          type="button"
+          className={`find-toggle ${search.options.matchWholeWord ? 'active' : ''}`}
+          title={t('find:wholeWord')}
+          aria-pressed={search.options.matchWholeWord}
+          onClick={() => toggle('matchWholeWord')}
+        >
+          <WholeWord size={16} />
+        </button>
+        <select
+          className="find-mode"
+          aria-label={t('find:modeNormal')}
+          value={search.options.mode}
+          onChange={(event) => search.setMode(event.target.value as FindMode)}
+        >
+          <option value="normal">{t('find:modeNormal')}</option>
+          <option value="extended">{t('find:modeExtended')}</option>
+          <option value="regex">{t('find:modeRegex')}</option>
+        </select>
+        <button
+          type="button"
+          className={`find-toggle ${search.options.inSelection ? 'active' : ''}`}
+          title={t('find:inSelection')}
+          aria-pressed={search.options.inSelection}
+          onClick={() => toggle('inSelection')}
+        >
+          {t('find:inSelection')}
+        </button>
+        <button
+          type="button"
+          className={`find-toggle ${search.options.wrapAround ? 'active' : ''}`}
+          title={t('find:wrapAround')}
+          aria-pressed={search.options.wrapAround}
+          onClick={() => toggle('wrapAround')}
+        >
+          {t('find:wrapAround')}
+        </button>
+        <button
+          type="button"
+          className="find-action"
+          title={t('find:findInTabs')}
+          onClick={() => findAllInTabs()}
+        >
+          {t('find:findInTabs')}
+        </button>
+        <button
+          type="button"
+          className="find-icon"
+          title={t('find:findInFiles')}
+          onClick={() => search.openFindInFiles()}
+        >
+          <FileSearch size={15} />
+        </button>
+        <button type="button" className="find-icon" title={t('find:close')} onClick={() => search.closeFind()}>
+          <X size={15} />
+        </button>
+      </div>
+
+      <div className="find-row find-options">
+        <button
+          type="button"
+          className={`find-toggle ${search.showReplace ? 'active' : ''}`}
+          onClick={() => useSearchStore.setState({ showReplace: !search.showReplace })}
+        >
+          <Replace size={14} /> {t('find:replace')}
+        </button>
+        {search.showReplace && (
+          <>
+            <input
+              type="text"
+              className="find-input replace-input"
+              placeholder={t('find:replacePlaceholder')}
+              value={search.replaceWith}
+              onChange={(event) => search.setReplaceWith(event.target.value)}
+              aria-label={t('find:replace')}
+            />
+            <button type="button" className="find-action" onClick={() => replaceOne()} disabled={!search.query}>
+              {t('find:replaceOne')}
+            </button>
+            <button type="button" className="find-action" onClick={() => replaceAll()} disabled={!search.query}>
+              {t('find:replaceAll')}
+            </button>
+          </>
+        )}
+        {search.options.mode === 'extended' && (
+          <label className="find-check">
+            <input
+              type="checkbox"
+              checked={search.options.extendedUnicode}
+              onChange={(event) => search.setOptions({ extendedUnicode: event.target.checked })}
+            />
+            {t('find:unicodeEscapes')}
+          </label>
+        )}
+        <label className="find-check">
+          <input
+            type="checkbox"
+            checked={search.options.dotMatchesNewline}
+            onChange={(event) => search.setOptions({ dotMatchesNewline: event.target.checked })}
+          />
+          {t('find:dotNewline')}
+        </label>
+        <label className="find-check">
+          <input
+            type="checkbox"
+            checked={search.options.backward}
+            onChange={(event) => search.setOptions({ backward: event.target.checked })}
+          />
+          {t('find:backward')}
+        </label>
+        <span className="find-options-divider" />
+        <button
+          type="button"
+          className="find-action accent-subtle"
+          title={t('find:markAll')}
+          onClick={() => markAll()}
+          disabled={!search.query}
+        >
+          <Bookmark size={13} /> {t('find:markAll')}
+        </button>
+        <label className="find-check" title={t('find:bookmarkLine')}>
+          <input
+            type="checkbox"
+            checked={bookmarkLine}
+            onChange={(e) => setBookmarkLine(e.target.checked)}
+          />
+          {t('find:bookmarkLine')}
+        </label>
+        <button
+          type="button"
+          className="find-action"
+          title={t('find:copyMarked')}
+          onClick={() => void copyMarkedLines()}
+          disabled={bookmarks.length === 0}
+        >
+          <Copy size={13} /> {t('find:copyMarked')}
+        </button>
+        <button
+          type="button"
+          className="find-action"
+          title={t('find:clearMarks')}
+          onClick={() => clearMarks()}
+          disabled={bookmarks.length === 0}
+        >
+          <BookmarkX size={13} /> {t('find:clearMarks')}
+        </button>
+        {bookmarks.length > 0 && (
+          <span className="find-count bookmark-badge">
+            {bookmarks.length} {t('find:bookmarks')}
+          </span>
+        )}
+        <button type="button" className="find-link" onClick={() => search.clearAllResults()}>
+          {t('find:clearResults')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+--------------------------------------------------------------------------------
+--- END: src/components/FindReplaceBar.tsx ---
+
+--- START: src/hooks/useFindReplace.ts ---
+--------------------------------------------------------------------------------
+import { useCallback } from 'react'
+import type { RefObject } from 'react'
+import type { FindOptions, FindResult } from '../../electron/types/ipc'
+import { useTabStore } from '../store/tabStore'
+import { useSearchStore, FIND_RESULTS_MAX } from '../store/searchStore'
+import { useFileStore } from '../store/fileStore'
+import { useI18n } from './useI18n'
+import {
+  buildRegExp,
+  decodeExtendedEscapes,
+  findAll,
+  lineColumnAt,
+  lineTextAt
+} from '../utils/searchRegex'
+import { describeError } from '../utils/errors'
+
+interface MatchRange {
+  index: number
+  length: number
+}
+
+function selectionBounds(content: string, options: FindOptions): { start: number; end: number } {
+  if (!options.inSelection) return { start: 0, end: content.length }
+  const range = useSearchStore.getState().selectionRange
+  if (!range || range.end <= range.start) return { start: 0, end: content.length }
+  return { start: Math.max(0, range.start), end: Math.min(content.length, range.end) }
+}
+
+function computeReplacement(match: RegExpExecArray, replacement: string, mode: FindOptions['mode']): string {
+  if (mode !== 'regex') return replacement
+  return match[0].replace(/.*/, () =>
+    replacement.replace(/\$(\$|&|\d{1,2})/g, (token, group: string) => {
+      if (group === '$') return '$'
+      if (group === '&') return match[0]
+      const index = Number.parseInt(group, 10)
+      return match[index] ?? token
+    })
+  )
+}
+
+function replacementText(options: FindOptions, replaceWith: string): string {
+  return options.mode === 'extended' ? decodeExtendedEscapes(replaceWith, options.extendedUnicode) : replaceWith
+}
+
+export interface FindReplaceApi {
+  findNext(): boolean
+  findPrevious(): boolean
+  replaceOne(): boolean
+  replaceAll(): number
+  countMatches(): number
+  findAllInTabs(): number
+  goToResult(result: FindResult): void
+  clearSelectionRange(): void
+}
+
+export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>): FindReplaceApi {
+  const { t } = useI18n()
+
+  const selectMatch = useCallback(
+    (tabId: string, content: string, match: MatchRange, focusEditor = false) => {
+      const store = useSearchStore.getState()
+      store.setLastMatch({ tabId, index: match.index, length: match.length })
+      const end = match.index + match.length
+      useTabStore.getState().updateTab(tabId, { cursorOffset: match.index, selectionEnd: end })
+      const editor = editorRef.current
+      if (editor) {
+        if (focusEditor) editor.focus()
+        editor.setSelectionRange(match.index, end)
+        const before = content.slice(0, match.index)
+        const lineIndex = before.split('\n').length - 1
+        const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || 20
+        const top = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 3)
+        editor.scrollTo({ top, behavior: 'smooth' })
+      }
+    },
+    [editorRef]
+  )
+
+  const collectMatches = useCallback((content: string, options: FindOptions): MatchRange[] => {
+    const { start, end } = selectionBounds(content, options)
+    const scoped = content.slice(start, end)
+    const matches = findAll(scoped, buildRegExp(useSearchStore.getState().query, options))
+    return matches.map((match) => ({ index: match.index + start, length: match.length }))
+  }, [])
+
+  const findNext = useCallback((): boolean => {
+    const state = useSearchStore.getState()
+    const tab = useTabStore.getState().getActive()
+    if (!tab) return false
+    try {
+      if (!state.query) return false
+      const matches = collectMatches(tab.fileContent, state.options)
+      if (matches.length === 0) {
+        state.setLastMatch(null)
+        return false
+      }
+      const editor = editorRef.current
+      const activeEditor = document.activeElement === editor
+      const last = state.lastMatch?.tabId === tab.id ? state.lastMatch : null
+      const anchor = last ? last.index + last.length : activeEditor ? (editor?.selectionEnd ?? 0) : 0
+      let target = matches.find((match) => match.index >= anchor)
+      if (!target && state.options.wrapAround) target = matches[0]
+      if (!target) return false
+      const current = target
+      if (last && current.index === last.index && last.length === current.length) {
+        const alternative = matches.find((match) => match.index > current.index)
+        if (alternative) target = alternative
+        else if (state.options.wrapAround) target = matches[0]
+      }
+      if (!target) return false
+      selectMatch(tab.id, tab.fileContent, target)
+      state.addHistory(state.query)
+      return true
+    } catch (error) {
+      const described = describeError(error)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
+      return false
+    }
+  }, [collectMatches, editorRef, selectMatch, t])
+
+  const findPrevious = useCallback((): boolean => {
+    const state = useSearchStore.getState()
+    const tab = useTabStore.getState().getActive()
+    if (!tab) return false
+    try {
+      if (!state.query) return false
+      const matches = collectMatches(tab.fileContent, state.options)
+      if (matches.length === 0) {
+        state.setLastMatch(null)
+        return false
+      }
+      const editor = editorRef.current
+      const last = state.lastMatch?.tabId === tab.id ? state.lastMatch : null
+      const anchor = last ? last.index : (editor?.selectionStart ?? tab.fileContent.length)
+      let target = [...matches].reverse().find((match) => match.index < anchor)
+      if (!target && state.options.wrapAround) target = matches[matches.length - 1]
+      if (!target) return false
+      selectMatch(tab.id, tab.fileContent, target)
+      state.addHistory(state.query)
+      return true
+    } catch (error) {
+      const described = describeError(error)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
+      return false
+    }
+  }, [collectMatches, editorRef, selectMatch, t])
+
+  const replaceOne = useCallback((): boolean => {
+    const state = useSearchStore.getState()
+    const tab = useTabStore.getState().getActive()
+    const match = state.lastMatch
+    if (!tab || !match || match.tabId !== tab.id) return findNext()
+    try {
+      const options = state.options
+      const regex = buildRegExp(state.query, { ...options, inSelection: false })
+      regex.lastIndex = match.index
+      const found = regex.exec(tab.fileContent)
+      if (!found || found.index !== match.index) return findNext()
+      const replacement = replacementText(options, state.replaceWith)
+      const value = computeReplacement(found, replacement, options.mode)
+      const nextContent = `${tab.fileContent.slice(0, match.index)}${value}${tab.fileContent.slice(match.index + match.length)}`
+      const editor = editorRef.current
+      if (editor && document.activeElement === editor) {
+        editor.setRangeText(value, match.index, match.index + match.length, 'end')
+        useTabStore.getState().setBuffer(tab.id, editor.value)
+      } else {
+        useTabStore.getState().setBuffer(tab.id, nextContent)
+        editor?.setSelectionRange(match.index + value.length, match.index + value.length)
+      }
+      useSearchStore.getState().setLastMatch(null)
+      state.addHistory(state.query)
+      return findNext()
+    } catch (error) {
+      const described = describeError(error)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
+      return false
+    }
+  }, [editorRef, findNext, t])
+
+  const replaceAll = useCallback((): number => {
+    const state = useSearchStore.getState()
+    const tab = useTabStore.getState().getActive()
+    if (!tab) return 0
+    try {
+      const options = state.options
+      const regex = buildRegExp(state.query, options)
+      const bounds = selectionBounds(tab.fileContent, options)
+      const scoped = tab.fileContent.slice(bounds.start, bounds.end)
+      const matches = findAll(scoped, regex)
+      if (matches.length === 0) return 0
+      const literal = replacementText(options, state.replaceWith)
+      const replacement = options.mode === 'regex' ? state.replaceWith : literal
+      const replaced = options.mode === 'regex'
+        ? scoped.replace(regex, replacement)
+        : scoped.replace(regex, () => literal)
+      const content = `${tab.fileContent.slice(0, bounds.start)}${replaced}${tab.fileContent.slice(bounds.end)}`
+      useTabStore.getState().setBuffer(tab.id, content)
+      useSearchStore.getState().setLastMatch(null)
+      state.addHistory(state.query)
+      const editor = editorRef.current
+      if (editor) {
+        editor.setSelectionRange(bounds.start, bounds.start + replaced.length)
+        editor.focus()
+      }
+      return matches.length
+    } catch (error) {
+      const described = describeError(error)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
+      return 0
+    }
+  }, [editorRef, t])
+
+  const countMatches = useCallback((): number => {
+    const state = useSearchStore.getState()
+    const tab = useTabStore.getState().getActive()
+    if (!tab || !state.query) return 0
+    try {
+      return collectMatches(tab.fileContent, state.options).length
+    } catch {
+      return 0
+    }
+  }, [collectMatches])
+
+  const findAllInTabs = useCallback((): number => {
+    const state = useSearchStore.getState()
+    const tabs = useTabStore.getState().tabs
+    try {
+      const regexSource = buildRegExp(state.query, { ...state.options, inSelection: false })
+      const results: FindResult[] = []
+      let truncated = false
+      for (const tab of tabs) {
+        const regex = new RegExp(regexSource.source, regexSource.flags)
+        const matches = findAll(tab.fileContent, regex)
+        for (const match of matches) {
+          if (results.length >= FIND_RESULTS_MAX) {
+            truncated = true
+            break
+          }
+          const { lineNumber, columnStart } = lineColumnAt(tab.fileContent, match.index)
+          results.push({
+            tabId: tab.id,
+            filePath: tab.filePath ?? tab.displayName,
+            lineNumber,
+            columnStart,
+            columnEnd: columnStart + match.length,
+            preview: lineTextAt(tab.fileContent, match.index)
+          })
+        }
+        if (truncated) break
+      }
+      state.addHistory(state.query)
+      state.setAllResults(results, truncated)
+      return results.length
+    } catch (error) {
+      const described = describeError(error)
+      useFileStore.getState().showToast('error', t('find:invalidRegex'), described.detail || described.message)
+      return 0
+    }
+  }, [t])
+
+  const goToResult = useCallback(
+    (result: FindResult) => {
+      const tabStore = useTabStore.getState()
+      const tab =
+        (result.tabId ? tabStore.tabs.find((item) => item.id === result.tabId) : undefined) ??
+        tabStore.tabs.find((item) => item.filePath === result.filePath)
+      if (!tab) return
+      tabStore.activateTab(tab.id)
+      const lines = tab.fileContent.split('\n')
+      const lineStart = lines.slice(0, Math.max(0, result.lineNumber - 1)).reduce((total, line) => total + line.length + 1, 0)
+      const start = lineStart + Math.max(0, result.columnStart - 1)
+      const end = start + Math.max(0, result.columnEnd - result.columnStart)
+      useSearchStore.getState().setLastMatch({ tabId: tab.id, index: start, length: end - start })
+      window.setTimeout(() => {
+        const editor = editorRef.current
+        if (!editor) return
+        editor.focus()
+        editor.setSelectionRange(start, end)
+        const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || 20
+        editor.scrollTo({ top: Math.max(0, (result.lineNumber - 1) * lineHeight - editor.clientHeight / 3), behavior: 'smooth' })
+      }, 30)
+    },
+    [editorRef]
+  )
+
+  const clearSelectionRange = useCallback(() => {
+    useSearchStore.getState().setSelectionRange(null)
+  }, [])
+
+  return { findNext, findPrevious, replaceOne, replaceAll, countMatches, findAllInTabs, goToResult, clearSelectionRange }
+}
+
+--------------------------------------------------------------------------------
+--- END: src/hooks/useFindReplace.ts ---
+
+--- START: src/hooks/useScrollSync.ts ---
+--------------------------------------------------------------------------------
+import { useCallback, useRef } from 'react'
+import { useUIStore } from '../store/uiStore'
+import type { HeadingItem } from '../types/document'
+
+export function useScrollSync(editorRef: React.RefObject<HTMLTextAreaElement | null>, previewRef: React.RefObject<HTMLDivElement | null>) {
+  const syncScrollWithToc = useUIStore((s) => s.syncScrollWithToc)
+  const autoScroll = useUIStore((s) => s.autoScroll)
+
+  const handleTocClick = useCallback((item: HeadingItem) => {
+    if (!syncScrollWithToc) return
+    const previewEl = previewRef.current
+    if (previewEl) {
+      const target = previewEl.querySelector(`[id="${item.id}"]`) as HTMLElement | null
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+    const editorEl = editorRef.current
+    if (editorEl) {
+      const text = editorEl.value
+      const lines = text.split('\n')
+      // Find first line matching heading level and text approx
+      const levelPrefix = '#'.repeat(item.level)
+      let lineIndex = -1
+      for (let i = 0; i < lines.length; i++) {
+        const trimmed = lines[i].trim()
+        if (trimmed.startsWith(levelPrefix + ' ') && trimmed.includes(item.text)) {
+          lineIndex = i
+          break
+        }
+      }
+      if (lineIndex >= 0) {
+        const lineHeight = parseFloat(window.getComputedStyle(editorEl).lineHeight) || 20
+        const scrollTop = Math.max(0, lineIndex * lineHeight - 40)
+        editorEl.scrollTo({ top: scrollTop, behavior: 'smooth' })
+        const pos = text.split('\n').slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0)
+        // Place cursor roughly at start of line
+        editorEl.setSelectionRange(pos, pos)
+        editorEl.focus()
+      }
+    }
+  }, [syncScrollWithToc, editorRef, previewRef])
+
+  const handleEditorScroll = useCallback(() => {
+    if (!autoScroll) return
+    const editorEl = editorRef.current
+    const previewEl = previewRef.current
+    if (!editorEl || !previewEl) return
+    const ratio = editorEl.scrollTop / Math.max(1, editorEl.scrollHeight - editorEl.clientHeight)
+    const maxScroll = Math.max(1, previewEl.scrollHeight - previewEl.clientHeight)
+    previewEl.scrollTop = ratio * maxScroll
+  }, [autoScroll, editorRef, previewRef])
+
+  return { handleTocClick, handleEditorScroll }
+}
+
+--------------------------------------------------------------------------------
+--- END: src/hooks/useScrollSync.ts ---
+
+--- START: src/store/tabStore.ts ---
+--------------------------------------------------------------------------------
+import { create } from 'zustand'
+import type { FilePayload, TabSnapshot, TextEncoding, LineEnding } from '../../electron/types/ipc'
+import type { ConflictState, ExternalChange } from '../types/document'
+import { WELCOME_DOCUMENT } from '../utils/sampleDocuments'
+
+export const MAX_TABS = 30
+
+export interface DocumentTab extends TabSnapshot {
+  conflict: ConflictState | null
+  externalChange: ExternalChange | null
+}
+
+export interface CloseResult {
+  closed: boolean
+  reason?: 'missing' | 'pinned' | 'dirty'
+}
+
+interface TabStore {
+  tabs: DocumentTab[]
+  activeTabId: string | null
+  windowId: string | null
+  reopenStack: TabSnapshot[]
+  hydrated: boolean
+  untitledCounter: number
+
+  hydrate(tabs: DocumentTab[], activeTabId: string | null, windowId: string): void
+  setWindowId(windowId: string): void
+  openTab(payload: FilePayload, activate?: boolean): { ok: boolean; id?: string; reason?: 'duplicate' | 'max' }
+  openSnapshot(snapshot: TabSnapshot, activate?: boolean): { ok: boolean; id?: string; reason?: 'duplicate' | 'max' }
+  newTab(content?: string, activate?: boolean): { ok: boolean; id?: string; reason?: 'max' }
+  activateTab(id: string): void
+  setBuffer(id: string, content: string): void
+  updateTab(id: string, patch: Partial<DocumentTab>): void
+  closeTab(id: string): CloseResult
+  closeOthers(id: string): void
+  closeToRight(id: string): void
+  closeToLeft(id: string): void
+  closeAll(): void
+  togglePin(id: string): void
+  moveTab(activeId: string, overId: string): void
+  markSaved(id: string, path: string, content: string, mtime: number): void
+  markSavedContent(id: string, savedContent: string): void
+  setConflict(id: string, conflict: ConflictState | null): void
+  setExternalChange(id: string, change: ExternalChange | null): void
+  setAllExternalChanges(change: ExternalChange | null): void
+  getActive(): DocumentTab | null
+  getTab(id: string): DocumentTab | null
+  toSnapshots(): TabSnapshot[]
+  pruneEmpty(): void
+  setHydrated(value: boolean): void
+}
+
+let idCounter = 0
+
+function createId(): string {
+  idCounter += 1
+  const cryptoApi = typeof crypto !== 'undefined' ? crypto : null
+  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') return cryptoApi.randomUUID()
+  return `tab-${Date.now()}-${idCounter}`
+}
+
+export function isTabDirty(tab: Pick<DocumentTab, 'fileContent' | 'savedContent'>): boolean {
+  return tab.fileContent !== tab.savedContent
+}
+
+export function snapshotToTab(snapshot: TabSnapshot): DocumentTab {
+  return {
+    ...snapshot,
+    conflict: null,
+    externalChange: null
+  }
+}
+
+function makeTab(options: {
+  filePath: string | null
+  displayName: string
+  fileContent: string
+  savedContent?: string
+  diskMtime?: number | null
+  encoding?: TextEncoding
+  lineEnding?: LineEnding
+  isPinned?: boolean
+}): DocumentTab {
+  return {
+    id: createId(),
+    filePath: options.filePath,
+    displayName: options.displayName,
+    fileContent: options.fileContent,
+    savedContent: options.savedContent ?? options.fileContent,
+    diskMtime: options.diskMtime ?? null,
+    encoding: options.encoding ?? 'utf-8',
+    lineEnding: options.lineEnding ?? 'lf',
+    isPinned: options.isPinned ?? false,
+    editorScrollTop: 0,
+    previewScrollTop: 0,
+    cursorOffset: 0,
+    selectionEnd: 0,
+    conflict: null,
+    externalChange: null
+  }
+}
+
+function sortPinned(tabs: DocumentTab[]): DocumentTab[] {
+  const pinned = tabs.filter((tab) => tab.isPinned)
+  const regular = tabs.filter((tab) => !tab.isPinned)
+  return [...pinned, ...regular]
+}
+
+function neighbourId(tabs: DocumentTab[], id: string): string | null {
+  const index = tabs.findIndex((tab) => tab.id === id)
+  if (index < 0) return tabs[0]?.id ?? null
+  return tabs[index + 1]?.id ?? tabs[index - 1]?.id ?? null
+}
+
+function initialStore() {
+  const welcome = makeTab({
+    filePath: null,
+    displayName: 'Welcome.md',
+    fileContent: WELCOME_DOCUMENT
+  })
+  return {
+    tabs: [welcome],
+    activeTabId: welcome.id,
+    windowId: null,
+    reopenStack: [] as TabSnapshot[],
+    hydrated: false,
+    untitledCounter: 1
+  }
+}
+
+export const useTabStore = create<TabStore>((set, get) => ({
+  ...initialStore(),
+
+  hydrate: (tabs, activeTabId, windowId) => {
+    const hydratedTabs = tabs.length > 0 ? tabs : initialStore().tabs
+    const active = hydratedTabs.some((tab) => tab.id === activeTabId) ? activeTabId : hydratedTabs[0].id
+    set({
+      tabs: sortPinned(hydratedTabs),
+      activeTabId: active,
+      windowId,
+      hydrated: true
+    })
+  },
+
+  setWindowId: (windowId) => set({ windowId }),
+
+  openTab: (payload, activate = true) => {
+    const state = get()
+    if (payload.path) {
+      const existing = state.tabs.find((tab) => tab.filePath === payload.path)
+      if (existing) {
+        if (activate) set({ activeTabId: existing.id })
+        return { ok: true, id: existing.id, reason: 'duplicate' }
+      }
+    }
+    if (state.tabs.length >= MAX_TABS) return { ok: false, reason: 'max' }
+    const tab = makeTab({
+      filePath: payload.path,
+      displayName: payload.name,
+      fileContent: payload.content,
+      savedContent: payload.content,
+      diskMtime: payload.mtime,
+      encoding: payload.encoding,
+      lineEnding: payload.lineEnding
+    })
+    set({
+      tabs: [...state.tabs, tab],
+      activeTabId: activate ? tab.id : state.activeTabId
+    })
+    return { ok: true, id: tab.id }
+  },
+
+  openSnapshot: (snapshot, activate = true) => {
+    const state = get()
+    if (snapshot.filePath) {
+      const existing = state.tabs.find((tab) => tab.filePath === snapshot.filePath)
+      if (existing) {
+        if (activate) set({ activeTabId: existing.id })
+        return { ok: true, id: existing.id, reason: 'duplicate' }
+      }
+    }
+    if (state.tabs.length >= MAX_TABS) return { ok: false, reason: 'max' }
+    const tab = snapshotToTab({ ...snapshot, id: createId() })
+    set({
+      tabs: sortPinned([...state.tabs, tab]),
+      activeTabId: activate ? tab.id : state.activeTabId
+    })
+    return { ok: true, id: tab.id }
+  },
+
+  newTab: (content = '', activate = true) => {
+    const state = get()
+    if (state.tabs.length >= MAX_TABS) return { ok: false, reason: 'max' }
+    const name = `Untitled${state.untitledCounter > 1 ? ` ${state.untitledCounter}` : ''}.md`
+    const tab = makeTab({
+      filePath: null,
+      displayName: name,
+      fileContent: content
+    })
+    set({
+      tabs: [...state.tabs, tab],
+      activeTabId: activate ? tab.id : state.activeTabId,
+      untitledCounter: state.untitledCounter + 1
+    })
+    return { ok: true, id: tab.id }
+  },
+
+  activateTab: (id) => {
+    if (get().tabs.some((tab) => tab.id === id)) set({ activeTabId: id })
+  },
+
+  setBuffer: (id, content) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, fileContent: content } : tab))
+    })),
+
+  updateTab: (id, patch) =>
+    set((state) => ({
+      tabs: sortPinned(state.tabs.map((tab) => (tab.id === id ? { ...tab, ...patch, id } : tab)))
+    })),
+
+  closeTab: (id) => {
+    const state = get()
+    const target = state.tabs.find((tab) => tab.id === id)
+    if (!target) return { closed: false, reason: 'missing' }
+    const remaining = state.tabs.filter((tab) => tab.id !== id)
+    const nextActive = state.activeTabId === id ? neighbourId(state.tabs, id) : state.activeTabId
+    const reopen = remaining.length > 0 ? [...state.reopenStack, target].slice(-10) : state.reopenStack
+    set({
+      tabs: remaining,
+      activeTabId: nextActive && remaining.some((tab) => tab.id === nextActive) ? nextActive : remaining[0]?.id ?? null,
+      reopenStack: reopen
+    })
+    if (remaining.length === 0) {
+      const store = get()
+      store.newTab('', true)
+    }
+    return { closed: true }
+  },
+
+  closeOthers: (id) => {
+    const state = get()
+    const kept = state.tabs.filter((tab) => tab.id === id || tab.isPinned)
+    set({
+      tabs: kept,
+      activeTabId: kept.some((tab) => tab.id === state.activeTabId) ? state.activeTabId : id
+    })
+  },
+
+  closeToRight: (id) => {
+    const state = get()
+    const index = state.tabs.findIndex((tab) => tab.id === id)
+    if (index < 0) return
+    const kept = state.tabs.filter((tab, position) => position <= index || tab.isPinned)
+    set({
+      tabs: kept,
+      activeTabId: kept.some((tab) => tab.id === state.activeTabId) ? state.activeTabId : id
+    })
+  },
+
+  closeToLeft: (id) => {
+    const state = get()
+    const index = state.tabs.findIndex((tab) => tab.id === id)
+    if (index < 0) return
+    const kept = state.tabs.filter((tab, position) => position >= index || tab.isPinned)
+    set({
+      tabs: kept,
+      activeTabId: kept.some((tab) => tab.id === state.activeTabId) ? state.activeTabId : id
+    })
+  },
+
+  closeAll: () => {
+    const state = get()
+    const kept = state.tabs.filter((tab) => tab.isPinned)
+    if (kept.length === 0) {
+      const store = get()
+      store.newTab('', true)
+    } else {
+      set({ tabs: kept, activeTabId: kept[0].id })
+    }
+  },
+
+  togglePin: (id) =>
+    set((state) => ({
+      tabs: sortPinned(
+        state.tabs.map((tab) => (tab.id === id ? { ...tab, isPinned: !tab.isPinned } : tab))
+      )
+    })),
+
+  moveTab: (activeId, overId) => {
+    const state = get()
+    const from = state.tabs.findIndex((tab) => tab.id === activeId)
+    const to = state.tabs.findIndex((tab) => tab.id === overId)
+    if (from < 0 || to < 0 || from === to) return
+    const source = state.tabs[from]
+    const target = state.tabs[to]
+    if (source.isPinned !== target.isPinned) return
+    const tabs = [...state.tabs]
+    const [moved] = tabs.splice(from, 1)
+    tabs.splice(to, 0, moved)
+    set({ tabs })
+  },
+
+  markSaved: (id, path, content, mtime) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) =>
+        tab.id === id
+          ? {
+              ...tab,
+              filePath: path,
+              displayName: path.split(/[\\/]/).pop() || tab.displayName,
+              fileContent: content,
+              savedContent: content,
+              diskMtime: mtime,
+              conflict: null,
+              externalChange: null
+            }
+          : tab
+      )
+    })),
+
+  markSavedContent: (id, savedContent) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, savedContent } : tab))
+    })),
+
+  setConflict: (id, conflict) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, conflict } : tab))
+    })),
+
+  setExternalChange: (id, change) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, externalChange: change } : tab))
+    })),
+
+  setAllExternalChanges: (change) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) =>
+        change && tab.filePath === change.path ? { ...tab, externalChange: change } : { ...tab, externalChange: null }
+      )
+    })),
+
+  getActive: () => {
+    const state = get()
+    return state.tabs.find((tab) => tab.id === state.activeTabId) ?? null
+  },
+
+  getTab: (id) => get().tabs.find((tab) => tab.id === id) ?? null,
+
+  toSnapshots: () =>
+    get().tabs.map((tab) => ({
+      id: tab.id,
+      filePath: tab.filePath,
+      displayName: tab.displayName,
+      fileContent: tab.fileContent,
+      savedContent: tab.savedContent,
+      diskMtime: tab.diskMtime,
+      encoding: tab.encoding,
+      lineEnding: tab.lineEnding,
+      isPinned: tab.isPinned,
+      editorScrollTop: tab.editorScrollTop,
+      previewScrollTop: tab.previewScrollTop,
+      cursorOffset: tab.cursorOffset,
+      selectionEnd: tab.selectionEnd
+    })),
+
+  pruneEmpty: () => {
+    const state = get()
+    const tabs = state.tabs.filter(
+      (tab) => Boolean(tab.filePath) || tab.fileContent.trim().length > 0 || tab.savedContent.trim().length > 0
+    )
+    if (tabs.length === state.tabs.length) return
+    if (tabs.length === 0) {
+      const store = get()
+      store.newTab('', true)
+      return
+    }
+    set({
+      tabs,
+      activeTabId: tabs.some((tab) => tab.id === state.activeTabId) ? state.activeTabId : tabs[0].id
+    })
+  },
+
+  setHydrated: (value) => set({ hydrated: value })
+}))
+
+export function useActiveTab(): DocumentTab | null {
+  return useTabStore((state) => state.tabs.find((tab) => tab.id === state.activeTabId) ?? null)
+}
+
+export function useTabDirty(): boolean {
+  return useTabStore((state) => {
+    const active = state.tabs.find((tab) => tab.id === state.activeTabId)
+    return active ? active.fileContent !== active.savedContent : false
+  })
+}
+
+--------------------------------------------------------------------------------
+--- END: src/store/tabStore.ts ---
 

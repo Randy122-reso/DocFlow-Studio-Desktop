@@ -1,4 +1,4 @@
-import { forwardRef, type MouseEvent, type UIEvent } from 'react'
+import { forwardRef, type CSSProperties, type MouseEvent, type UIEvent } from 'react'
 import type { DocumentSettings } from '../types/document'
 import { copyText } from '../utils/clipboard'
 import { useFileStore } from '../store/fileStore'
@@ -20,6 +20,15 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(fu
   ref
 ) {
   const { handleContextMenu } = useContextMenu()
+
+  /**
+   * Scroll position is reported synchronously. The parent only stores it in a
+   * ref (no Zustand write, no React state), so this is effectively free and
+   * avoids the debounce timer that used to allocate on every scroll event.
+   */
+  const handleScroll = (event: UIEvent<HTMLElement>) => {
+    onScrollTop?.(event.currentTarget.scrollTop)
+  }
 
   const handleClick = async (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement
@@ -66,11 +75,10 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(fu
       ref={ref}
       className={`preview-pane ${zen ? 'zen-preview' : ''}`}
       onContextMenu={(e) => handleContextMenu(e, 'preview')}
-      onScroll={(event: UIEvent<HTMLElement>) => onScrollTop?.(event.currentTarget.scrollTop)}
+      onScroll={handleScroll}
     >
-      <div className="preview-stage">
+      <div className="preview-stage" style={{ '--doc-zoom': zoomLevel / 100 } as CSSProperties}>
         <article
-          style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
           className={`document-page theme-${settings.theme} paper-${settings.paperTone} font-${settings.fontFamily} size-${settings.fontSize} margin-${settings.marginSize} ${settings.justifyText ? 'justify-text' : ''} ${settings.autoNumberHeadings ? 'numbered-headings' : ''} ${isPagedMode ? 'paged-mode' : 'continuous-mode'}`}
         >
           {settings.showHeaderFooter && (

@@ -1,5 +1,71 @@
 # Changelog
 
+## [1.6.2] — 2026-11-07
+
+Performance patch implementing the fixes from `SOLUSI.md` for buttery-smooth scrolling.
+
+### Fixed
+
+- **Gutter scroll stutter** (`src/components/DocumentEditor.tsx`): removed `scrollTop` React state from the editor scroll handler. The gutter and highlight backdrop are now moved imperatively via `transform: translateY(-Npx)` / `scrollTop` on the DOM refs — no React re-render per frame (SOLUSI.md #1).
+- **Preview repaint cost** (`src/components/DocumentViewer.tsx`, `src/index.css`): replaced `transform: scale()` on the document page with layout zoom via the `--doc-zoom` CSS custom property, so scrolling no longer re-rasterises the whole preview layer (SOLUSI.md #2).
+- **Scroll persistence churn** (`src/App.tsx`, `src/components/DocumentViewer.tsx`): live scroll offsets now live in `useRef` only and are committed to the tab store when switching tabs / before unload — no Zustand writes or debounce timers during scroll (SOLUSI.md #3).
+- **Long-document paint cost** (`src/index.css`): added `content-visibility: auto` + `contain-intrinsic-size` on `.markdown-body > *` inside the preview pane (SOLUSI.md #4).
+
+### Added
+
+- Scroll performance regression tests: `tests/unit/scrollPerformance.test.tsx` (gutter renders every line once + imperative transform + no React render on scroll; preview uses `--doc-zoom` without `transform: scale`) and `tests/unit/scrollPersistence.test.tsx` (live offsets kept out of the store until tab switch commits them).
+
+### Tests
+
+- All **135** unit tests pass (`vitest run`), including the new scroll performance & persistence suites.
+
+### Changed
+
+- `package.json` version bumped to `1.6.2`.
+
+---
+
+## [1.6.1] — 2026-11-07
+
+Performance & stability patch implementing the fixes from `SOLUSI.md`: fewer global re-renders,
+debounced scroll/state writes, memoized editor line calculations, debounced search highlighting,
+and off-thread Markdown parsing.
+
+### Fixed
+
+- **Global re-render on typing** (`src/App.tsx`): stop subscribing to the entire `tabs` array;
+  subscribe to `activeTabId`, the active tab, and `tabCount` separately so unrelated tabs and
+  shell panels no longer re-render on every keystroke.
+- **Scroll event spam** (`src/components/DocumentViewer.tsx`, `src/components/DocumentEditor.tsx`,
+  `src/App.tsx`): preview scroll persistence is debounced 150 ms; editor scroll paint is throttled
+  with `requestAnimationFrame`; editor scroll persistence remains debounced 180 ms.
+- **Editor line splitting on every keystroke** (`src/components/DocumentEditor.tsx`): `value.split('\n')`,
+  visible-line range, and spacer heights are computed inside `useMemo`, keyed on content/scroll/font.
+- **Hard-coded line height** (`src/components/DocumentEditor.tsx`): gutter and virtualization now
+  read the real `line-height` from `getComputedStyle`, re-measured on font-size changes.
+- **Search highlight cost** (`src/components/DocumentEditor.tsx`): search query used for backdrop
+  highlighting is debounced 300 ms before `findAll` runs.
+- **Highlight alignment** (`src/index.css`): `scrollbar-gutter: stable` on the editor textarea and
+  matching backdrop right inset keep wrapped text aligned with highlight segments.
+- **Synchronous Markdown parsing** (`src/workers/markdownWorker.ts`, `src/hooks/useMarkdownParser.ts`,
+  `src/utils/markdownParser.ts`): `marked` parsing now runs in a Web Worker; DOMPurify sanitization
+  and heading/callout/code-block transforms stay on the renderer main thread via `parseHtml`.
+  A synchronous `parseMarkdown` fallback is retained for tests and workers-unavailable environments.
+
+### Changed
+
+- `package.json` version bumped to `1.6.1`.
+- README updated with the performance architecture and `SOLUSI.md` fix summary.
+
+### Tests
+
+- All **132** unit tests pass (`vitest run`), including `hooks-discipline`, `tabStore`,
+  `searchRegex`, `highlightRanges`, `markdownParser`, `FileSearchService`, and `pdfVector`.
+- `npm run typecheck` clean for renderer and Electron configs.
+- `npm run build` clean; Vite emits the bundled `markdownWorker-*.js` asset.
+
+---
+
 ## [1.6.0] — 2026-11-05
 
 Full v1.6 release: unified workspace (tabs & pinning), Find/Replace + Find in Files, auto-update &

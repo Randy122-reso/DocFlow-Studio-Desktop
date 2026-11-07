@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -52,6 +53,59 @@ function SegmentSpan({ seg }: { seg: TextSegment }) {
   return <mark className={`hl-${seg.kind}`}>{seg.text}</mark>
 }
 
+// ── Gutter Renderer ──────────────────────────────────────────────────────────
+
+interface EditorGutterProps {
+  lineNumbers: number[]
+  lineHeight: number
+  bookmarks: number[]
+  currentLine: number
+  onToggleBookmark(line: number): void
+}
+
+/**
+ * The gutter renders every line number exactly once per document. Scroll
+ * positioning is handled imperatively by DocumentEditor via `transform`, so
+ * scrolling never re-renders this component. React.memo keeps typing cheap
+ * because the component only re-renders when lines, bookmarks or the active
+ * line actually change.
+ */
+const EditorGutter = memo(
+  forwardRef<HTMLDivElement, EditorGutterProps>(function EditorGutter(
+    { lineNumbers, lineHeight, bookmarks, currentLine, onToggleBookmark },
+    ref
+  ) {
+    const bookmarkSet = useMemo(() => new Set(bookmarks), [bookmarks])
+
+    return (
+      <div ref={ref} className="editor-gutter-inner">
+        {lineNumbers.map((lineNum) => {
+          const isBookmarked = bookmarkSet.has(lineNum)
+          const isCurrent = currentLine === lineNum
+          return (
+            <div
+              key={lineNum}
+              className={`gutter-line ${isBookmarked ? 'is-bookmarked' : ''} ${
+                isCurrent ? 'is-current' : ''
+              }`}
+              style={{ height: lineHeight }}
+              onClick={() => onToggleBookmark(lineNum)}
+              title={`Line ${lineNum}${
+                isBookmarked ? ' (Bookmarked - click to remove)' : ' (Click to bookmark)'
+              }`}
+            >
+              <span className="gutter-bookmark">
+                {isBookmarked ? <Bookmark size={10} fill="currentColor" /> : <span className="bookmark-hover-dot" />}
+              </span>
+              <span className="gutter-number">{lineNum}</span>
+            </div>
+          )
+        })}
+      </div>
+    )
+  })
+)
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProps>(function DocumentEditor(
@@ -61,14 +115,14 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
   const { t } = useI18n()
   const { handleContextMenu } = useContextMenu()
   const internalRef = useRef<HTMLTextAreaElement | null>(null)
-  const gutterRef = useRef<HTMLDivElement>(null)
+  const gutterInnerRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const [scrollTop, setScrollTop] = useState(0)
-  const [viewportHeight, setViewportHeight] = useState(600)
+  const [lineHeightPx, setLineHeightPx] = useState(24.5)
   const [currentLine, setCurrentLine] = useState(1)
   const [showBookmarkList, setShowBookmarkList] = useState(false)
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
 
   // Search & bookmark state (use scalar selectors to avoid object-reference churn)
   const searchQuery = useSearchStore((s) => s.query)
@@ -105,15 +159,17 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
 
   // ── Resize observer ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!internalRef.current || typeof ResizeObserver === 'undefined') return
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setViewportHeight(entry.contentRect.height)
-      }
-    })
-    resizeObserver.observe(internalRef.current)
+    const el = internalRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const measure = () => {
+      const computed = parseFloat(window.getComputedStyle(el).lineHeight)
+      if (Number.isFinite(computed) && computed > 0) setLineHeightPx(computed)
+    }
+    measure()
+    const resizeObserver = new ResizeObserver(() => measure())
+    resizeObserver.observe(el)
     return () => resizeObserver.disconnect()
-  }, [])
+  }, [fontSize])
 
   // ── Popover outside-click ────────────────────────────────────────────────────
   useEffect(() => {
@@ -149,29 +205,37 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
     updateCursor(element)
   }
 
+  /**
+   * Imperative scroll synchronisation — deliberately no React state here.
+   * Updating state on every scroll event re-renders the whole editor on each
+   * frame, which is the main cause of stuttering (see SOLUSI.md #1).
+   */
   const handleScroll = (event: UIEvent<HTMLTextAreaElement>) => {
-    const target = event.currentTarget
-    const st = target.scrollTop
-    setScrollTop(st)
-    if (gutterRef.current) gutterRef.current.scrollTop = st
-    if (backdropRef.current) backdropRef.current.scrollTop = st
+    const scrollTop = event.currentTarget.scrollTop
+    if (gutterInnerRef.current) {
+      gutterInnerRef.current.style.transform = `translateY(-${scrollTop}px)`
+    }
+    if (backdropRef.current) backdropRef.current.scrollTop = scrollTop
   }
 
-  // ── Virtual gutter ───────────────────────────────────────────────────────────
-  const allLines = value.split('\n')
+  // ── Line data (content only) ─────────────────────────────────────────────────
+  const allLines = useMemo(() => value.split('\n'), [value])
   const lineCount = allLines.length
-  const lineHeight = fontSize === 'sm' ? 21.875 : fontSize === 'lg' ? 28 : 24.5
+  const lineNumbers = useMemo(
+    () => Array.from({ length: lineCount }, (_, index) => index + 1),
+    [lineCount]
+  )
+  const lineHeight = lineHeightPx
 
-  const visibleStart = Math.max(1, Math.floor(scrollTop / lineHeight) - 5)
-  const visibleEnd = Math.min(lineCount, Math.ceil((scrollTop + viewportHeight) / lineHeight) + 10)
-
-  const topSpacer = Math.max(0, (visibleStart - 1) * lineHeight)
-  const bottomSpacer = Math.max(0, (lineCount - visibleEnd) * lineHeight)
-
-  const visibleLines: number[] = []
-  for (let i = visibleStart; i <= visibleEnd; i++) {
-    visibleLines.push(i)
-  }
+  // ── Debounce search query for highlight rendering ───────────────────────────
+  useEffect(() => {
+    if (!isSearchOpen) {
+      setDebouncedSearchQuery('')
+      return
+    }
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, isSearchOpen])
 
   // ── Highlight segments (memoised) ────────────────────────────────────────────
   const highlightSegments = useMemo(() => {
@@ -182,9 +246,9 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
     allRanges.push(...bmRanges)
 
     // 2. Search match ranges (only when search bar is open and query exists)
-    if (isSearchOpen && searchQuery) {
+    if (isSearchOpen && debouncedSearchQuery) {
       try {
-        const regex = buildRegExp(searchQuery, {
+        const regex = buildRegExp(debouncedSearchQuery, {
           matchCase: searchMatchCase,
           mode: searchMode,
           matchWholeWord: searchWholeWord,
@@ -207,9 +271,27 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
 
     if (allRanges.length === 0) return null
     return buildSegments(value, allRanges)
-  }, [value, bookmarkLineNums, isSearchOpen, searchQuery, searchMatchCase, searchMode, searchWholeWord, searchDotNewline, lastMatchIndex, lastMatchLength])
+  }, [value, bookmarkLineNums, isSearchOpen, debouncedSearchQuery, searchMatchCase, searchMode, searchWholeWord, searchDotNewline, lastMatchIndex, lastMatchLength])
 
   const showBackdrop = highlightSegments !== null && highlightSegments.length > 0
+
+  // Re-align the gutter/backdrop after a font change or when the backdrop
+  // mounts while the editor is already scrolled.
+  useEffect(() => {
+    const editor = internalRef.current
+    if (!editor) return
+    if (gutterInnerRef.current) {
+      gutterInnerRef.current.style.transform = `translateY(-${editor.scrollTop}px)`
+    }
+    if (backdropRef.current) backdropRef.current.scrollTop = editor.scrollTop
+  }, [showBackdrop, fontSize, fontFamily, lineHeight])
+
+  const handleGutterToggle = useCallback(
+    (line: number) => {
+      toggleBookmark(line)
+    },
+    [toggleBookmark]
+  )
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -325,36 +407,17 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
       </div>
 
       <div className="editor-container">
-        {/* Line number gutter */}
-        <div ref={gutterRef} className={`editor-gutter size-${fontSize}`}>
-          <div style={{ height: topSpacer }} />
-          {visibleLines.map((lineNum) => {
-            const isBookmarked = bookmarks.includes(lineNum)
-            const isCurrent = currentLine === lineNum
-            return (
-              <div
-                key={lineNum}
-                className={`gutter-line ${isBookmarked ? 'is-bookmarked' : ''} ${
-                  isCurrent ? 'is-current' : ''
-                }`}
-                style={{ height: lineHeight }}
-                onClick={() => toggleBookmark(lineNum)}
-                title={`Line ${lineNum}${
-                  isBookmarked ? ' (Bookmarked - click to remove)' : ' (Click to bookmark)'
-                }`}
-              >
-                <span className="gutter-bookmark">
-                  {isBookmarked ? (
-                    <Bookmark size={10} fill="currentColor" />
-                  ) : (
-                    <span className="bookmark-hover-dot" />
-                  )}
-                </span>
-                <span className="gutter-number">{lineNum}</span>
-              </div>
-            )
-          })}
-          <div style={{ height: bottomSpacer }} />
+        {/* Line number gutter — every line is rendered once and moved
+            imperatively with transform while scrolling. */}
+        <div className={`editor-gutter size-${fontSize}`}>
+          <EditorGutter
+            ref={gutterInnerRef}
+            lineNumbers={lineNumbers}
+            lineHeight={lineHeight}
+            bookmarks={bookmarkLineNums}
+            currentLine={currentLine}
+            onToggleBookmark={handleGutterToggle}
+          />
         </div>
 
         {/* Highlight backdrop — sits behind the transparent textarea */}

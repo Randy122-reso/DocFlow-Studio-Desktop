@@ -667,6 +667,7 @@ button:disabled {
   color: #292524;
   tab-size: 2;
   caret-color: var(--accent);
+  scrollbar-gutter: stable;
 }
 
 .editor-textarea::placeholder {
@@ -689,6 +690,13 @@ button:disabled {
   padding: 26px 22px 80px;
 }
 
+/* Isolate the preview's scroll/layout from the rest of the shell. Zen review
+   is excluded because it scrolls through its `.zen-scroll` parent and must
+   keep its natural height. */
+.preview-pane:not(.zen-preview) {
+  contain: strict;
+}
+
 .preview-stage {
   display: flex;
   justify-content: center;
@@ -704,25 +712,29 @@ button:disabled {
   --doc-line-soft: rgba(120, 113, 108, 0.1);
   --doc-code-bg: #1c1917;
   --doc-heading-font: inherit;
-  width: min(100%, 210mm);
-  min-height: 297mm;
+  /* Zoom is applied through layout metrics instead of transform:scale().
+     Scaling an article with thousands of markdown nodes forces the browser
+     to re-rasterise the whole layer on every scroll (SOLUSI.md #2). */
+  --doc-zoom: 1;
+  width: min(100%, calc(210mm * var(--doc-zoom)));
+  min-height: calc(297mm * var(--doc-zoom));
   background: #fff;
   color: var(--doc-text);
-  padding: 26mm 22mm;
+  padding: calc(26mm * var(--doc-zoom)) calc(22mm * var(--doc-zoom));
   border-radius: 2px;
   box-shadow: 0 18px 50px rgba(28, 25, 23, 0.16), 0 2px 8px rgba(28, 25, 23, 0.08);
-  font-size: 15px;
+  font-size: calc(15px * var(--doc-zoom));
   line-height: 1.7;
   position: relative;
   transition: background 0.2s, color 0.2s;
 }
 
 .document-page.margin-compact {
-  padding: 16mm 14mm;
+  padding: calc(16mm * var(--doc-zoom)) calc(14mm * var(--doc-zoom));
 }
 
 .document-page.margin-spacious {
-  padding: 32mm 28mm;
+  padding: calc(32mm * var(--doc-zoom)) calc(28mm * var(--doc-zoom));
 }
 
 .document-page.paper-cream {
@@ -756,11 +768,11 @@ button:disabled {
 }
 
 .document-page.size-sm {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-zoom));
 }
 
 .document-page.size-lg {
-  font-size: 17px;
+  font-size: calc(17px * var(--doc-zoom));
 }
 
 .doc-header,
@@ -802,6 +814,14 @@ button:disabled {
 
 .markdown-body {
   overflow-wrap: break-word;
+}
+
+/* Skip layout/paint for markdown blocks that are outside the preview
+   viewport. `auto` keeps the real (cached) size once a block has been
+   rendered, so the scrollbar does not jump on long documents. */
+.preview-pane .markdown-body > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
 }
 
 .markdown-body > *:first-child {
@@ -3485,7 +3505,7 @@ kbd {
   top: 0;
   /* Align with the textarea: skip the gutter width */
   left: 48px; /* matches .editor-gutter width */
-  right: 0;
+  right: 10px; /* matches the reserved stable scrollbar gutter */
   bottom: 0;
   overflow: hidden;
   pointer-events: none;
@@ -3566,8 +3586,15 @@ mark.hl-bookmark-line {
   font-family: inherit;
   color: var(--muted-2);
   text-align: right;
+}
+
+/* All line numbers live in this single translated layer. Scrolling only
+   changes `transform` straight from the scroll handler — no React state and
+   no DOM creation/destruction per frame (SOLUSI.md #1). */
+.editor-gutter-inner {
   padding-top: 26px;
   padding-bottom: 120px;
+  will-change: transform;
 }
 
 .gutter-line {
