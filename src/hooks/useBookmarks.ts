@@ -1,3 +1,4 @@
+import { EDITOR_LINE_HEIGHT_FALLBACK } from '../constants/editor'
 import { useCallback } from 'react'
 import type { RefObject } from 'react'
 import { useBookmarkStore } from '../store/bookmarkStore'
@@ -49,7 +50,7 @@ export function useBookmarks(editorRef: RefObject<HTMLTextAreaElement | null>): 
       editor.focus()
       editor.setSelectionRange(lineStart, lineEnd)
 
-      const computedLineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || 24
+      const computedLineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || EDITOR_LINE_HEIGHT_FALLBACK
       const top = Math.max(0, targetIndex * computedLineHeight - editor.clientHeight / 3)
       editor.scrollTo({ top, behavior: 'smooth' })
     },

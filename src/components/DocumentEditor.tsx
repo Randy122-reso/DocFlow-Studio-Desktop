@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useContextMenu } from '../hooks/useContextMenu'
 import { useBookmarks } from '../hooks/useBookmarks'
+import { EDITOR_LINE_HEIGHT_FALLBACK } from '../constants/editor'
 import { useI18n } from '../hooks/useI18n'
 import { useSearchStore } from '../store/searchStore'
 import { useBookmarkStore } from '../store/bookmarkStore'
@@ -119,7 +120,7 @@ export const DocumentEditor = forwardRef<HTMLTextAreaElement, DocumentEditorProp
   const backdropRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const [lineHeightPx, setLineHeightPx] = useState(24.5)
+  const [lineHeightPx, setLineHeightPx] = useState(EDITOR_LINE_HEIGHT_FALLBACK)
   const [currentLine, setCurrentLine] = useState(1)
   const [showBookmarkList, setShowBookmarkList] = useState(false)
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')

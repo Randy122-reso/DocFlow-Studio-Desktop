@@ -6,7 +6,7 @@ import App from '../../src/App'
 const unsubscribe = vi.fn()
 
 beforeAll(() => {
-  // @ts-ignore test-only mock of the Electron bridge
+  // @ts-expect-error test-only mock of the Electron bridge
   global.window.docflow = {
     app: {
       version: vi.fn(() => Promise.resolve('1.6.0')),

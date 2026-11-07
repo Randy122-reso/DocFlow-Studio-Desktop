@@ -2,7 +2,7 @@ import type { DocumentStats } from '../types/document'
 
 export function computeDocumentStats(markdown: string): DocumentStats {
   const withoutCode = markdown.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`]*`/g, ' ')
-  const words = withoutCode.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)?.length ?? 0
+  const words = withoutCode.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)?.length ?? 0
   const characters = markdown.length
   const charactersNoSpaces = markdown.replace(/\s/g, '').length
   const sentences = withoutCode.split(/[.!?]+(?:\s|$)/).filter((part) => part.trim().length > 0).length

@@ -23,6 +23,12 @@
   --shadow-lg: 0 28px 80px rgba(28, 25, 23, 0.26);
   --radius: 12px;
   --radius-sm: 8px;
+  --editor-padding: 26px 30px 120px;
+  --editor-line-height: 1.75;
+  --editor-font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
+  --editor-font-size: 14px;
+  --editor-font-size-sm: 12.5px;
+  --editor-font-size-lg: 16px;
   color-scheme: light;
   font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
   font-synthesis: none;
@@ -660,10 +666,10 @@ button:disabled {
   outline: none;
   resize: none;
   background: transparent;
-  padding: 26px 30px 120px;
-  line-height: 1.75;
-  font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
-  font-size: 14px;
+  padding: var(--editor-padding);
+  line-height: var(--editor-line-height);
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
   color: #292524;
   tab-size: 2;
   caret-color: var(--accent);
@@ -675,11 +681,11 @@ button:disabled {
 }
 
 .editor-textarea.size-sm {
-  font-size: 12.5px;
+  font-size: var(--editor-font-size-sm);
 }
 
 .editor-textarea.size-lg {
-  font-size: 16px;
+  font-size: var(--editor-font-size-lg);
 }
 
 .preview-pane {
@@ -3512,10 +3518,10 @@ kbd {
   user-select: none;
 
   /* Mirror textarea font metrics exactly */
-  padding: 26px 30px 120px;
-  line-height: 1.75;
-  font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, monospace;
-  font-size: 14px;
+  padding: var(--editor-padding);
+  line-height: var(--editor-line-height);
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
   tab-size: 2;
 
   /* Text must be invisible — only the mark backgrounds show */
@@ -3526,11 +3532,11 @@ kbd {
 }
 
 .editor-backdrop.size-sm {
-  font-size: 12.5px;
+  font-size: var(--editor-font-size-sm);
 }
 
 .editor-backdrop.size-lg {
-  font-size: 16px;
+  font-size: var(--editor-font-size-lg);
 }
 
 /* Search match highlight — amber/yellow */

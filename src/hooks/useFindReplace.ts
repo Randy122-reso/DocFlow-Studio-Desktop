@@ -1,3 +1,4 @@
+import { EDITOR_LINE_HEIGHT_FALLBACK } from '../constants/editor'
 import { useCallback } from 'react'
 import type { RefObject } from 'react'
 import type { FindOptions, FindResult } from '../../electron/types/ipc'
@@ -68,7 +69,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
         editor.setSelectionRange(match.index, end)
         const before = content.slice(0, match.index)
         const lineIndex = before.split('\n').length - 1
-        const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || 20
+        const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || EDITOR_LINE_HEIGHT_FALLBACK
         const top = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 3)
         editor.scrollTo({ top, behavior: 'smooth' })
       }
@@ -276,7 +277,7 @@ export function useFindReplace(editorRef: RefObject<HTMLTextAreaElement | null>)
         if (!editor) return
         editor.focus()
         editor.setSelectionRange(start, end)
-        const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || 20
+        const lineHeight = Number.parseFloat(window.getComputedStyle(editor).lineHeight) || EDITOR_LINE_HEIGHT_FALLBACK
         editor.scrollTo({ top: Math.max(0, (result.lineNumber - 1) * lineHeight - editor.clientHeight / 3), behavior: 'smooth' })
       }, 30)
     },

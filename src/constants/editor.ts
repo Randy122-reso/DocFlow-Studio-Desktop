@@ -1,0 +1,1 @@
+export const EDITOR_LINE_HEIGHT_FALLBACK = 24.5
